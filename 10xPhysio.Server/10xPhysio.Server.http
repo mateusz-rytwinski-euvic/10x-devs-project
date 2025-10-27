@@ -1,0 +1,6 @@
+@_10xPhysio.Server_HostAddress = http://localhost:5181
+
+GET {{_10xPhysio.Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
