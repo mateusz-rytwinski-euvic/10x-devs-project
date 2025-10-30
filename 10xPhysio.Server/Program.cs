@@ -1,3 +1,4 @@
+using _10xPhysio.Server.Extensions;
 
 namespace _10xPhysio.Server
 {
@@ -13,6 +14,8 @@ namespace _10xPhysio.Server
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+
+            builder.Services.AddSupabaseClient(builder.Configuration);
 
             var app = builder.Build();
 

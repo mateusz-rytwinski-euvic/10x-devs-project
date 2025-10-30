@@ -73,6 +73,18 @@ To set up and run this project on your local machine, follow these steps.
       npm install
       ```
 
+### Supabase configuration
+
+The backend expects Supabase credentials to be available at startup. The configuration is bound to the `Supabase` section in `appsettings.json` and validated eagerly. For local development, store the secrets with the .NET user-secrets store so they are not committed to source control:
+
+```sh
+dotnet user-secrets set "Supabase:Url" "https://your-project.supabase.co"
+dotnet user-secrets set "Supabase:AnonKey" "your-anon-key"
+dotnet user-secrets set "Supabase:ServiceRoleKey" "optional-service-role-key"
+```
+
+Services can request the `ISupabaseClientFactory` interface via dependency injection to obtain an initialized `Supabase.Client` instance when needed.
+
 ### Running the Application
 
 You can run both the frontend and backend concurrently using Visual Studio's multi-project startup configuration, which is the default for this solution.
