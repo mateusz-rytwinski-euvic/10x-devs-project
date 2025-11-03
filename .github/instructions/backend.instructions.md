@@ -66,6 +66,7 @@ throw new ArgumentNullException(nameof(parameterName));
 ## Null Checks & Exceptions
 - Use guard clauses for argument validation.
 - Use `nameof` for parameter names in exceptions.
+- Prefer `ArgumentNullException.ThrowIfNull` for null checks in recent .NET versions.
 
 ## Modern C# Features
 - Use pattern matching and expression-bodied members where appropriate.

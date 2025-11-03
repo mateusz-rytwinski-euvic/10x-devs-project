@@ -453,8 +453,7 @@
     {
       "recommendations": "Stretch daily and perform core stability exercises.",
       "aiGenerated": true,
-      "sourceGenerationId": "8a146f48-4271-4e5e-b6ac-2485d0f3e4a9",
-      "verified": true
+      "sourceGenerationId": "8a146f48-4271-4e5e-b6ac-2485d0f3e4a9"
     }
     ```
   - Response JSON:
@@ -464,7 +463,6 @@
       "recommendations": "Stretch daily and perform core stability exercises.",
       "recommendationsGeneratedByAi": true,
       "recommendationsGeneratedAt": "2025-02-15T09:55:00Z",
-      "verified": true,
       "updatedAt": "2025-02-15T09:55:00Z",
       "etag": "W/\"2025-02-15T09:55:00Z\""
     }
