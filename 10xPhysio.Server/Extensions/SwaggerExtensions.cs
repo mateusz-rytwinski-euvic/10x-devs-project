@@ -1,8 +1,36 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http;
 using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace _10xPhysio.Server.Extensions
 {
+    /// <summary>
+    /// Operation filter to add If-Match header parameter for specific endpoints.
+    /// </summary>
+    public class IfMatchOperationFilter : IOperationFilter
+    {
+        /// <summary>
+        /// Applies the If-Match header parameter to PATCH operations on Profile endpoints.
+        /// </summary>
+        /// <param name="operation">The OpenAPI operation.</param>
+        /// <param name="context">The operation filter context.</param>
+        public void Apply(OpenApiOperation operation, OperationFilterContext context)
+        {
+            if (context.ApiDescription.HttpMethod == "PATCH" && context.ApiDescription.RelativePath?.Contains("Profile") == true)
+            {
+                operation.Parameters.Add(new OpenApiParameter
+                {
+                    Name = "If-Match",
+                    In = ParameterLocation.Header,
+                    Description = "ETag for optimistic concurrency control",
+                    Required = true,
+                    Schema = new OpenApiSchema { Type = "string" }
+                });
+            }
+        }
+    }
+
     /// <summary>
     /// Extension methods for configuring Swagger/OpenAPI documentation.
     /// </summary>
@@ -52,6 +80,8 @@ namespace _10xPhysio.Server.Extensions
                 {
                     { bearerScheme, Array.Empty<string>() }
                 });
+
+                options.OperationFilter<IfMatchOperationFilter>();
             });
 
             return services;

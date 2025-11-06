@@ -1,3 +1,7 @@
+---
+applyTo: 'none'
+---
+
 # Conventional Commits Instructions
 
 Adopt the [Conventional Commits](https://www.conventionalcommits.org/) specification for all commit messages to ensure a readable history, automate changelog generation, and facilitate continuous integration.

@@ -99,6 +99,20 @@ The server exposes four REST endpoints under `api/auth` that proxy Supabase GoTr
 - `login` returns `{ accessToken, refreshToken, expiresIn, user }` where `user` includes the therapist metadata mirrored from Supabase. Preserve the `accessToken`; it is required for the protected endpoints.
 - `logout` and `session` require the header `Authorization: Bearer <Supabase access token>` and respond with `401 Unauthorized` plus `{ "message": "invalid_token" }` when the token is missing or expired.
 
+#### Profile API overview
+
+Authenticated therapists can manage their profile via a dedicated controller backed by weak ETag concurrency:
+
+| Method | Route           | Description                                                    |
+|--------|-----------------|----------------------------------------------------------------|
+| GET    | `/api/profile`  | Returns the therapist profile and emits a weak ETag header.    |
+| PATCH  | `/api/profile`  | Applies profile updates guarded by the supplied `If-Match` ETag.|
+
+- Every call requires `Authorization: Bearer <Supabase access token>`.
+- Successful responses include an `ETag` header shaped like `W/"<timestamp>"`; clients must provide it in `If-Match` when patching to avoid overwriting concurrent changes.
+- PATCH accepts `{ firstName, lastName }`, trims and validates characters (letters, spaces, hyphen), and rejects no-op submissions with `{ "message": "no_changes_submitted" }`.
+- Error responses use the shared `OperationMessageDto` payload so UI layers can surface friendly messages (e.g., `profile_missing`, `etag_mismatch`, `invalid_if_match`).
+
 #### JWT bearer configuration
 
 During startup the API configures the built-in ASP.NET Core JWT bearer handler:
