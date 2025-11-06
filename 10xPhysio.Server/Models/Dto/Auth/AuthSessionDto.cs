@@ -1,18 +1,12 @@
-using _10xPhysio.Server.Models.Dto.Profiles;
 
 namespace _10xPhysio.Server.Models.Dto.Auth
 {
     /// <summary>
     /// Represents the composite response payload returned from signup and login endpoints. Couples Supabase session
-    /// tokens with the therapist profile surface area defined in the API plan.
+    /// tokens with the therapist identity metadata expected by the REST contract.
     /// </summary>
     public class AuthSessionDto
     {
-        /// <summary>
-        /// Gets or sets the authenticated user identifier.
-        /// </summary>
-        public Guid UserId { get; set; }
-
         /// <summary>
         /// Gets or sets the short-lived access token issued by Supabase GoTrue.
         /// </summary>
@@ -29,8 +23,8 @@ namespace _10xPhysio.Server.Models.Dto.Auth
         public int ExpiresIn { get; set; }
 
         /// <summary>
-        /// Gets or sets the therapist profile snapshot associated with the authenticated user.
+        /// Gets or sets the therapist account information associated with the authenticated session.
         /// </summary>
-        public ProfileSummaryDto Profile { get; set; } = new();
+        public AuthUserDto User { get; set; } = new();
     }
 }

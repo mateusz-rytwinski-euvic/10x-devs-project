@@ -22,6 +22,12 @@ namespace _10xPhysio.Server.Configuration
         [Required]
         public string AnonKey { get; set; } = string.Empty;
 
+        /// <summary>
+        /// Gets or sets the Supabase JWT secret used to validate access tokens.
+        /// </summary>
+        [Required]
+        public string JwtSecret { get; set; } = string.Empty;
+
         /// <inheritdoc />
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
@@ -33,6 +39,11 @@ namespace _10xPhysio.Server.Configuration
             if (string.IsNullOrWhiteSpace(AnonKey))
             {
                 yield return new ValidationResult("Supabase anon key must be provided.", [nameof(AnonKey)]);
+            }
+
+            if (string.IsNullOrWhiteSpace(JwtSecret))
+            {
+                yield return new ValidationResult("Supabase JWT secret must be provided.", [nameof(JwtSecret)]);
             }
         }
     }

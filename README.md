@@ -80,10 +80,44 @@ The backend expects Supabase credentials to be available at startup. The configu
 ```sh
 dotnet user-secrets set "Supabase:Url" "https://your-project.supabase.co"
 dotnet user-secrets set "Supabase:AnonKey" "your-anon-key"
-dotnet user-secrets set "Supabase:ServiceRoleKey" "optional-service-role-key"
 ```
 
 Services can request the `ISupabaseClientFactory` interface via dependency injection to obtain an initialized `Supabase.Client` instance when needed.
+
+#### Authentication API overview
+
+The server exposes four REST endpoints under `api/auth` that proxy Supabase GoTrue operations:
+
+| Method | Route                | Description                                  |
+|--------|----------------------|----------------------------------------------|
+| POST   | `/api/auth/signup`   | Registers a therapist account in Supabase.   |
+| POST   | `/api/auth/login`    | Exchanges credentials for Supabase tokens.   |
+| POST   | `/api/auth/logout`   | Revokes the current Supabase session.        |
+| GET    | `/api/auth/session`  | Returns a snapshot of the authenticated user.|
+
+- `signup` expects `{ email, password, firstName, lastName }` and returns `{ "message": "account_created" }` when it succeeds.
+- `login` returns `{ accessToken, refreshToken, expiresIn, user }` where `user` includes the therapist metadata mirrored from Supabase. Preserve the `accessToken`; it is required for the protected endpoints.
+- `logout` and `session` require the header `Authorization: Bearer <Supabase access token>` and respond with `401 Unauthorized` plus `{ "message": "invalid_token" }` when the token is missing or expired.
+
+#### JWT bearer configuration
+
+During startup the API configures the built-in ASP.NET Core JWT bearer handler:
+
+- **Issuer** – derived from the configured Supabase URL with `/auth/v1` suffix (for example `https://your-project.supabase.co/auth/v1`).
+- **Audience** – `authenticated` (Supabase default for client tokens).
+- **Signing key** – Supabase anon key (`Supabase:AnonKey`) interpreted as an HMAC secret.
+- **Clock skew** – one minute to tolerate minimal clock drift.
+
+Any request that fails those checks is surfaced through the global exception middleware as `{ "message": "invalid_token" }` with the appropriate HTTP status code.
+
+#### Rate limiting
+
+`POST /api/auth/signup` and `POST /api/auth/login` are guarded by a fixed-window rate limiter:
+
+- **Permit limit:** 5 requests per minute per client IP address.
+- **Queue limit:** 2 pending requests; additional calls receive `429 Too Many Requests`.
+
+This protects the Supabase GoTrue API from brute-force attempts while keeping the rest of the application unaffected.
 
 ### Running the Application
 

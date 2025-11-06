@@ -1,5 +1,3 @@
-using _10xPhysio.Server.Models.Dto.Profiles;
-
 namespace _10xPhysio.Server.Models.Dto.Auth
 {
     /// <summary>
@@ -10,7 +8,7 @@ namespace _10xPhysio.Server.Models.Dto.Auth
         /// <summary>
         /// Gets or sets the authenticated user identifier resolved from the JWT (<c>auth.uid()</c>).
         /// </summary>
-        public Guid UserId { get; set; }
+        public Guid Id { get; set; }
 
         /// <summary>
         /// Gets or sets the email recovered from Supabase token claims.
@@ -18,18 +16,13 @@ namespace _10xPhysio.Server.Models.Dto.Auth
         public string Email { get; set; } = string.Empty;
 
         /// <summary>
-        /// Gets or sets the issued at timestamp extracted from the JWT.
+        /// Gets or sets the therapist first name sourced from the metadata table.
         /// </summary>
-        public DateTimeOffset IssuedAt { get; set; }
+        public string FirstName { get; set; } = string.Empty;
 
         /// <summary>
-        /// Gets or sets the expiration timestamp extracted from the JWT.
+        /// Gets or sets the therapist last name sourced from the metadata table.
         /// </summary>
-        public DateTimeOffset ExpiresAt { get; set; }
-
-        /// <summary>
-        /// Gets or sets the therapist profile snapshot used for UI hydration.
-        /// </summary>
-        public ProfileSummaryDto Profile { get; set; } = new();
+        public string LastName { get; set; } = string.Empty;
     }
 }
