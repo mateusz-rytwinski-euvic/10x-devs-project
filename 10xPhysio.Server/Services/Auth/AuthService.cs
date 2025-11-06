@@ -45,8 +45,8 @@ namespace _10xPhysio.Server.Services.Auth
             {
                 Data = new Dictionary<string, object>
                 {
-                    ["firstName"] = command.FirstName,
-                    ["lastName"] = command.LastName
+                    ["first_name"] = command.FirstName,
+                    ["last_name"] = command.LastName
                 }
             };
 
