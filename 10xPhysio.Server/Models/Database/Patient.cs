@@ -39,16 +39,18 @@ namespace _10xPhysio.Server.Models.Database
         [Column("date_of_birth")]
         public DateTime? DateOfBirth { get; set; }
 
-        /// <summary>
-        /// Timestamp of when the patient record was created.
-        /// </summary>
-        [Column("created_at")]
-        public DateTimeOffset CreatedAt { get; set; }
+    /// <summary>
+    /// Timestamp of when the patient record was created. The column is ignored during writes so that
+    /// Supabase defaults and triggers populate the value instead of the .NET default (DateTimeOffset.MinValue).
+    /// </summary>
+    [Column("created_at", ignoreOnInsert: true, ignoreOnUpdate: true)]
+    public DateTimeOffset CreatedAt { get; set; }
 
-        /// <summary>
-        /// Timestamp of the most recent patient update, kept in sync by database triggers.
-        /// </summary>
-        [Column("updated_at")]
-        public DateTimeOffset UpdatedAt { get; set; }
+    /// <summary>
+    /// Timestamp of the most recent patient update, kept in sync by database triggers which require us to skip
+    /// sending the property on insert or update.
+    /// </summary>
+    [Column("updated_at", ignoreOnInsert: true, ignoreOnUpdate: true)]
+    public DateTimeOffset UpdatedAt { get; set; }
     }
 }
