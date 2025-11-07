@@ -1,6 +1,7 @@
 using _10xPhysio.Server.Extensions;
 using _10xPhysio.Server.Middleware;
 using _10xPhysio.Server.Services.Auth;
+using _10xPhysio.Server.Services.Patients;
 using _10xPhysio.Server.Services.Profiles;
 
 using System.Threading.RateLimiting;
@@ -27,6 +28,7 @@ namespace _10xPhysio.Server
             builder.Services.AddSupabaseClient(builder.Configuration);
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IProfileService, ProfileService>();
+            builder.Services.AddScoped<IPatientService, PatientService>();
 
             builder.Services.AddSupabaseAuthentication(builder.Configuration);
 

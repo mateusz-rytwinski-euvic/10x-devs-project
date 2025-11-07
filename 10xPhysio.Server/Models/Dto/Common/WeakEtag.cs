@@ -51,5 +51,21 @@ namespace _10xPhysio.Server.Models.Dto.Common
             timestamp = parsed.ToUniversalTime();
             return true;
         }
+
+        /// <summary>
+        /// Parses a weak ETag string into a <see cref="DateTimeOffset"/> value or throws when the format is invalid.
+        /// </summary>
+        /// <param name="value">Weak ETag string to parse.</param>
+        /// <returns>Normalized timestamp sourced from the weak ETag.</returns>
+        /// <exception cref="FormatException">Thrown when <paramref name="value"/> does not represent a weak ETag.</exception>
+        public static DateTimeOffset Parse(string value)
+        {
+            if (!TryParse(value, out var timestamp))
+            {
+                throw new FormatException("Value is not a valid weak ETag (W/\"timestamp\").");
+            }
+
+            return timestamp;
+        }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Http;
+using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
+
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace _10xPhysio.Server.Extensions
@@ -17,17 +18,46 @@ namespace _10xPhysio.Server.Extensions
         /// <param name="context">The operation filter context.</param>
         public void Apply(OpenApiOperation operation, OperationFilterContext context)
         {
-            if (context.ApiDescription.HttpMethod == "PATCH" && context.ApiDescription.RelativePath?.Contains("Profile") == true)
+            ArgumentNullException.ThrowIfNull(operation);
+            ArgumentNullException.ThrowIfNull(context);
+
+            if (!string.Equals(context.ApiDescription.HttpMethod, HttpMethods.Patch, StringComparison.OrdinalIgnoreCase))
             {
-                operation.Parameters.Add(new OpenApiParameter
-                {
-                    Name = "If-Match",
-                    In = ParameterLocation.Header,
-                    Description = "ETag for optimistic concurrency control",
-                    Required = true,
-                    Schema = new OpenApiSchema { Type = "string" }
-                });
+                return;
             }
+
+            var relativePath = context.ApiDescription.RelativePath;
+            if (string.IsNullOrWhiteSpace(relativePath))
+            {
+                return;
+            }
+
+            if (!RequiresIfMatchHeader(relativePath))
+            {
+                return;
+            }
+
+            operation.Parameters ??= new List<OpenApiParameter>();
+            if (operation.Parameters.Any(parameter => string.Equals(parameter.Name, HeaderNames.IfMatch, StringComparison.OrdinalIgnoreCase)))
+            {
+                return;
+            }
+
+            // Adding the If-Match header enables Swagger UI to surface the weak ETag required for optimistic concurrency.
+            operation.Parameters.Add(new OpenApiParameter
+            {
+                Name = HeaderNames.IfMatch,
+                In = ParameterLocation.Header,
+                Description = "ETag for optimistic concurrency control",
+                Required = true,
+                Schema = new OpenApiSchema { Type = "string" }
+            });
+        }
+
+        private static bool RequiresIfMatchHeader(string relativePath)
+        {
+            return relativePath.Contains("Profile", StringComparison.OrdinalIgnoreCase)
+                || relativePath.Contains("Patient", StringComparison.OrdinalIgnoreCase);
         }
     }
 
