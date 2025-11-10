@@ -11,7 +11,7 @@ namespace _10xPhysio.Server.Services.Supabase
         /// Retrieves an initialized Supabase <see cref="Client"/> instance.
         /// </summary>
         /// <param name="cancellationToken">Token used to cancel the initialization request.</param>
-        /// <returns>An initialized Supabase client that can be reused safely.</returns>
+        /// <returns>An initialized Supabase client scoped to the current request.</returns>
         Task<Client> GetClientAsync(CancellationToken cancellationToken = default);
     }
 }
