@@ -11,5 +11,10 @@ namespace _10xPhysio.Server.Models.Dto.Common
         /// Gets or sets the textual message describing the outcome of the operation.
         /// </summary>
         public string Message { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the optional correlation identifier aiding in cross-service tracing.
+        /// </summary>
+        public string? CorrelationId { get; set; }
     }
 }

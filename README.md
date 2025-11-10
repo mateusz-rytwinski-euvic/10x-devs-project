@@ -84,6 +84,18 @@ dotnet user-secrets set "Supabase:AnonKey" "your-anon-key"
 
 Services can request the `ISupabaseClientFactory` interface via dependency injection to obtain an initialized `Supabase.Client` instance when needed.
 
+### AI provider configuration
+
+The AI generation workflow depends on OpenRouter credentials and defaults bound to the `AiGeneration` configuration section. For local development, store the API key and preferred defaults using the .NET user-secrets store:
+
+```sh
+dotnet user-secrets set "AiGeneration:ApiBaseUrl" "https://openrouter.ai/api/v1/"
+dotnet user-secrets set "AiGeneration:ApiKey" "your-openrouter-api-key"
+dotnet user-secrets set "AiGeneration:DefaultModel" "openrouter/auto"
+```
+
+Additional optional settings include `DefaultTemperature`, `MinTemperature`, `MaxTemperature`, `MinimumContextLength`, `PromptOverrideLimit`, and `ProviderTimeoutSeconds`. These values are validated on startup to prevent misconfiguration.
+
 #### Authentication API overview
 
 The server exposes four REST endpoints under `api/auth` that proxy Supabase GoTrue operations:
@@ -132,6 +144,21 @@ The visits surface is exposed under `/api/visits` and `/api/patients/{patientId}
 - `PATCH` and `PUT` endpoints **must** include the weak ETag from the previous response (`If-Match: W/"<timestamp>"`). Missing headers produce `400 missing_if_match`, whereas mismatches yield `409 etag_mismatch`.
 - Business-rule violations return `422 validation_failed` along with the specific field code (e.g., `visit_content_required`, `recommendations_required`).
 - All error payloads use `OperationMessageDto` for consistency with the rest of the API surface.
+
+#### AI Generation API overview
+
+Authenticated therapists can trigger and review AI-generated visit recommendations under `/api/visits/{visitId}`.
+
+| Method | Route                                                          | Description                                                                                  |
+|--------|----------------------------------------------------------------|----------------------------------------------------------------------------------------------|
+| POST   | `/api/visits/{visitId}/ai-generation`                          | Triggers a new AI draft using optional model, temperature, and prompt override parameters.   |
+| GET    | `/api/visits/{visitId}/ai-generations`                         | Returns a paginated list of historical AI generations for the visit.                         |
+| GET    | `/api/visits/{visitId}/ai-generations/{generationId}`          | Retrieves the persisted prompt/response pair for auditing and regeneration workflows.        |
+
+- All routes require `Authorization: Bearer <Supabase access token>` and accept the optional header `X-Correlation-Id` for distributed tracing. When omitted, the server generates a correlation identifier and echoes it back in responses.
+- The POST command accepts `{ model, temperature, promptOverrides, regenerateFromGenerationId }`. Visit notes must contain at least the configured minimum number of characters (default 120) across `interview` and `description` to proceed.
+- Listing supports `page` (≥1, default 1), `pageSize` (≤50, default 10), and `order` (`asc`/`desc`, default `desc`). Responses return `PaginatedResponseDto<VisitAiGenerationListItemDto>`.
+- Error messages reuse `OperationMessageDto` enriched with the correlation identifier so logs and clients can align failures quickly.
 
 #### JWT bearer configuration
 

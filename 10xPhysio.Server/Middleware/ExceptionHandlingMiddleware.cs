@@ -1,4 +1,5 @@
 using _10xPhysio.Server.Exceptions;
+using _10xPhysio.Server.Extensions;
 using _10xPhysio.Server.Models.Dto.Common;
 
 using Supabase.Gotrue.Exceptions;
@@ -44,33 +45,41 @@ namespace _10xPhysio.Server.Middleware
         /// <returns>Task representing the asynchronous middleware operation.</returns>
         public async Task InvokeAsync(HttpContext context)
         {
+            var correlationId = context.GetOrCreateCorrelationId();
+
+            using var scope = logger.BeginScope(new Dictionary<string, object>
+            {
+                ["CorrelationId"] = correlationId,
+                ["Path"] = context.Request.Path.ToString()
+            });
+
             try
             {
                 await next(context).ConfigureAwait(false);
             }
             catch (ApiException apiException)
             {
-                await WriteResponseAsync(context, apiException.StatusCode, apiException.Message, apiException).ConfigureAwait(false);
+                await WriteResponseAsync(context, correlationId, apiException.StatusCode, apiException.Message, apiException).ConfigureAwait(false);
             }
             catch (ArgumentException argumentException)
             {
-                await WriteResponseAsync(context, StatusCodes.Status400BadRequest, argumentException.Message, argumentException).ConfigureAwait(false);
+                await WriteResponseAsync(context, correlationId, StatusCodes.Status400BadRequest, argumentException.Message, argumentException).ConfigureAwait(false);
             }
             catch (GotrueException gotrueException)
             {
-                await WriteResponseAsync(context, StatusCodes.Status502BadGateway, "supabase_error", gotrueException).ConfigureAwait(false);
+                await WriteResponseAsync(context, correlationId, StatusCodes.Status502BadGateway, "supabase_error", gotrueException).ConfigureAwait(false);
             }
             catch (PostgrestException postgrestException)
             {
-                await WriteResponseAsync(context, StatusCodes.Status502BadGateway, "supabase_error", postgrestException).ConfigureAwait(false);
+                await WriteResponseAsync(context, correlationId, StatusCodes.Status502BadGateway, "supabase_error", postgrestException).ConfigureAwait(false);
             }
             catch (Exception exception)
             {
-                await WriteResponseAsync(context, StatusCodes.Status500InternalServerError, "internal_error", exception).ConfigureAwait(false);
+                await WriteResponseAsync(context, correlationId, StatusCodes.Status500InternalServerError, "internal_error", exception).ConfigureAwait(false);
             }
         }
 
-        private async Task WriteResponseAsync(HttpContext context, int statusCode, string message, Exception exception)
+        private async Task WriteResponseAsync(HttpContext context, string correlationId, int statusCode, string message, Exception exception)
         {
             if (statusCode >= 500)
             {
@@ -89,7 +98,13 @@ namespace _10xPhysio.Server.Middleware
             context.Response.StatusCode = statusCode;
             context.Response.ContentType = MediaTypeNames.Application.Json;
 
-            var payload = new OperationMessageDto { Message = message };
+            var payload = new OperationMessageDto
+            {
+                Message = message,
+                CorrelationId = correlationId
+            };
+
+            context.Response.Headers["X-Correlation-Id"] = correlationId;
             await context.Response.WriteAsync(JsonSerializer.Serialize(payload, SerializerOptions)).ConfigureAwait(false);
         }
     }

@@ -12,7 +12,7 @@ namespace _10xPhysio.Server.Extensions
     public class IfMatchOperationFilter : IOperationFilter
     {
         /// <summary>
-    /// Applies the If-Match header parameter to operations that require optimistic concurrency headers.
+        /// Applies the If-Match header parameter to operations that require optimistic concurrency headers.
         /// </summary>
         /// <param name="operation">The OpenAPI operation.</param>
         /// <param name="context">The operation filter context.</param>
@@ -75,6 +75,56 @@ namespace _10xPhysio.Server.Extensions
     }
 
     /// <summary>
+    /// Operation filter to surface the optional X-Correlation-Id header across API endpoints.
+    /// </summary>
+    public class CorrelationIdOperationFilter : IOperationFilter
+    {
+        /// <inheritdoc />
+        public void Apply(OpenApiOperation operation, OperationFilterContext context)
+        {
+            ArgumentNullException.ThrowIfNull(operation);
+            ArgumentNullException.ThrowIfNull(context);
+
+            if (!IsCorrelationIdAwareOperation(context))
+            {
+                return;
+            }
+
+            operation.Parameters ??= new List<OpenApiParameter>();
+
+            if (operation.Parameters.Any(static parameter => string.Equals(parameter.Name, "X-Correlation-Id", StringComparison.OrdinalIgnoreCase)))
+            {
+                return;
+            }
+
+            operation.Parameters.Add(new OpenApiParameter
+            {
+                Name = "X-Correlation-Id",
+                In = ParameterLocation.Header,
+                Description = "Optional correlation identifier used for distributed tracing.",
+                Required = false,
+                Schema = new OpenApiSchema { Type = "string" }
+            });
+        }
+
+        private static bool IsCorrelationIdAwareOperation(OperationFilterContext context)
+        {
+            var apiDescription = context.ApiDescription;
+            var relativePath = apiDescription?.RelativePath;
+
+            if (string.IsNullOrWhiteSpace(relativePath))
+            {
+                return false;
+            }
+
+            // Correlation identifiers are only surfaced for AI generation workflows, where the downstream AI provider
+            // expects the header to propagate distributed tracing metadata. Matching against the dedicated route keeps
+            // the documentation focused and avoids misleading consumers on unrelated endpoints.
+            return relativePath.Contains("ai-generation", StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    /// <summary>
     /// Extension methods for configuring Swagger/OpenAPI documentation.
     /// </summary>
     public static class SwaggerExtensions
@@ -125,6 +175,7 @@ namespace _10xPhysio.Server.Extensions
                 });
 
                 options.OperationFilter<IfMatchOperationFilter>();
+                options.OperationFilter<CorrelationIdOperationFilter>();
             });
 
             return services;
