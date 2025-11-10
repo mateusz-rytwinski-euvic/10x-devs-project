@@ -113,6 +113,26 @@ Authenticated therapists can manage their profile via a dedicated controller bac
 - PATCH accepts `{ firstName, lastName }`, trims and validates characters (letters, spaces, hyphen), and rejects no-op submissions with `{ "message": "no_changes_submitted" }`.
 - Error responses use the shared `OperationMessageDto` payload so UI layers can surface friendly messages (e.g., `profile_missing`, `etag_mismatch`, `invalid_if_match`).
 
+#### Visit API overview
+
+The visits surface is exposed under `/api/visits` and `/api/patients/{patientId}/visits`, mirroring the implementation plan for therapist-scoped visit management. All routes require a valid Supabase access token in the `Authorization: Bearer <token>` header.
+
+| Method | Route                                               | Description                                                                                     |
+|--------|-----------------------------------------------------|-------------------------------------------------------------------------------------------------|
+| POST   | `/api/patients/{patientId}/visits`                  | Creates a visit bound to the patient after validating content and therapist ownership.          |
+| GET    | `/api/patients/{patientId}/visits`                  | Returns a paginated timeline with optional date filters and recommendation visibility toggle.   |
+| GET    | `/api/visits/{visitId}`                             | Retrieves visit details, AI telemetry, and emits a weak ETag header for concurrency.            |
+| PATCH  | `/api/visits/{visitId}`                             | Updates visit metadata (`visitDate`, `interview`, `description`) guarded by `If-Match`.         |
+| DELETE | `/api/visits/{visitId}`                             | Removes a visit once therapist ownership is confirmed.                                          |
+| PUT    | `/api/visits/{visitId}/recommendations`             | Saves therapist-approved recommendations and updates AI tracking metadata.                      |
+
+- `POST` requires at least one non-empty text field (`interview`, `description`, or `recommendations`) and rejects visit dates further than 30 days in the future.
+- `GET` list accepts `page`, `pageSize (<=100)`, `from`, `to`, `includeRecommendations`, and `order` (`asc`/`desc`). When `includeRecommendations=false`, the payload omits recommendation text to reduce payload size for timeline views.
+- Single visit retrieval includes the latest AI generation ID and the total AI generation count for analytics.
+- `PATCH` and `PUT` endpoints **must** include the weak ETag from the previous response (`If-Match: W/"<timestamp>"`). Missing headers produce `400 missing_if_match`, whereas mismatches yield `409 etag_mismatch`.
+- Business-rule violations return `422 validation_failed` along with the specific field code (e.g., `visit_content_required`, `recommendations_required`).
+- All error payloads use `OperationMessageDto` for consistency with the rest of the API surface.
+
 #### JWT bearer configuration
 
 During startup the API configures the built-in ASP.NET Core JWT bearer handler:

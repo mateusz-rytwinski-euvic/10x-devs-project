@@ -3,6 +3,7 @@ using _10xPhysio.Server.Middleware;
 using _10xPhysio.Server.Services.Auth;
 using _10xPhysio.Server.Services.Patients;
 using _10xPhysio.Server.Services.Profiles;
+using _10xPhysio.Server.Services.Visits;
 
 using System.Threading.RateLimiting;
 
@@ -30,6 +31,7 @@ namespace _10xPhysio.Server
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IProfileService, ProfileService>();
             builder.Services.AddScoped<IPatientService, PatientService>();
+            builder.Services.AddScoped<IVisitService, VisitService>();
 
             builder.Services.AddSupabaseAuthentication(builder.Configuration);
 

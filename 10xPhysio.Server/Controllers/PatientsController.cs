@@ -61,7 +61,7 @@ namespace _10xPhysio.Server.Controllers
 
             // Named route avoids runtime link generation failures when producing the Location header.
             return CreatedAtRoute(
-                nameof(GetByIdAsync),
+                nameof(GetPatientByIdAsync),
                 new { patientId = patient.Id },
                 patient);
         }
@@ -101,13 +101,13 @@ namespace _10xPhysio.Server.Controllers
         /// <param name="visitsLimit">Maximum number of visits to embed.</param>
         /// <param name="cancellationToken">Token used to cancel the async operation.</param>
         /// <returns>Detailed patient payload.</returns>
-    [HttpGet("{patientId:guid}", Name = nameof(GetByIdAsync))]
+    [HttpGet("{patientId:guid}", Name = nameof(GetPatientByIdAsync))]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PatientDetailsDto))]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(OperationMessageDto))]
         [ProducesResponseType(StatusCodes.Status401Unauthorized, Type = typeof(OperationMessageDto))]
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(OperationMessageDto))]
         [ProducesResponseType(StatusCodes.Status502BadGateway, Type = typeof(OperationMessageDto))]
-        public async Task<IActionResult> GetByIdAsync(
+        public async Task<IActionResult> GetPatientByIdAsync(
             Guid patientId,
             [FromQuery] bool includeVisits = false,
             [FromQuery] int? visitsLimit = null,

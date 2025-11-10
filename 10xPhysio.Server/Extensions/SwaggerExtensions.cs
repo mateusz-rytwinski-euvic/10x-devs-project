@@ -12,7 +12,7 @@ namespace _10xPhysio.Server.Extensions
     public class IfMatchOperationFilter : IOperationFilter
     {
         /// <summary>
-        /// Applies the If-Match header parameter to PATCH operations on Profile endpoints.
+    /// Applies the If-Match header parameter to operations that require optimistic concurrency headers.
         /// </summary>
         /// <param name="operation">The OpenAPI operation.</param>
         /// <param name="context">The operation filter context.</param>
@@ -21,7 +21,8 @@ namespace _10xPhysio.Server.Extensions
             ArgumentNullException.ThrowIfNull(operation);
             ArgumentNullException.ThrowIfNull(context);
 
-            if (!string.Equals(context.ApiDescription.HttpMethod, HttpMethods.Patch, StringComparison.OrdinalIgnoreCase))
+            var httpMethod = context.ApiDescription.HttpMethod;
+            if (!IsConcurrencyProtectedMethod(httpMethod))
             {
                 return;
             }
@@ -57,7 +58,19 @@ namespace _10xPhysio.Server.Extensions
         private static bool RequiresIfMatchHeader(string relativePath)
         {
             return relativePath.Contains("Profile", StringComparison.OrdinalIgnoreCase)
-                || relativePath.Contains("Patient", StringComparison.OrdinalIgnoreCase);
+                || relativePath.Contains("Patient", StringComparison.OrdinalIgnoreCase)
+                || relativePath.Contains("Visit", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsConcurrencyProtectedMethod(string? httpMethod)
+        {
+            if (string.IsNullOrWhiteSpace(httpMethod))
+            {
+                return false;
+            }
+
+            return string.Equals(httpMethod, HttpMethods.Patch, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(httpMethod, HttpMethods.Put, StringComparison.OrdinalIgnoreCase);
         }
     }
 
