@@ -1,13 +1,19 @@
-import './App.css';
+import { Navigate, Route, Routes } from 'react-router-dom';
+import { useAuth } from './hooks/useAuth';
+import { LoginPage } from './pages/LoginPage';
+import { PatientsPage } from './pages/PatientsPage';
 
-// We keep the landing view intentionally minimal so product teams can scaffold features without removing sample code.
 export const App = () => {
+    const { isAuthenticated } = useAuth();
+
     return (
-        <main className="app-container">
-            <h1 className="app-title">10x Physio Frontend</h1>
-            <p className="app-subtitle">
-                Start building your experience by editing <code>src/App.tsx</code> and adding your first feature.
-            </p>
-        </main>
+        <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route
+                path="/patients"
+                element={isAuthenticated ? <PatientsPage /> : <Navigate to="/login" replace />}
+            />
+            <Route path="*" element={<Navigate to={isAuthenticated ? '/patients' : '/login'} replace />} />
+        </Routes>
     );
 };
