@@ -1,11 +1,23 @@
-﻿#root {
-    max-width: 1280px;
-    margin: 0 auto;
+﻿.app-container {
+    display: flex;
+    min-height: 100vh;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
     padding: 2rem;
+}
+
+.app-title {
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 600;
     text-align: center;
 }
 
-th, td {
-    padding-left: 1rem;
-    padding-right: 1rem;
+.app-subtitle {
+    margin: 0;
+    max-width: 32rem;
+    color: rgb(100 116 139);
+    font-size: 1rem;
+    text-align: center;
 }
