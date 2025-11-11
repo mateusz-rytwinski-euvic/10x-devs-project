@@ -1,20 +1,25 @@
-:root {
-  font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-  color: rgb(15 23 42);
-  background-color: rgb(241 245 249);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+/* Tailwind's Vite plugin relies on this import to generate utility classes at build time. */
+@import "tailwindcss";
 
-body {
-  margin: 0;
-  min-height: 100vh;
-}
+@layer base {
+  :root {
+    font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
+    color: rgb(15 23 42);
+    background-color: rgb(241 245 249);
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 
-#root {
-  min-height: 100vh;
+  body {
+    margin: 0;
+    min-height: 100vh;
+  }
+
+  #root {
+    min-height: 100vh;
+  }
 }

@@ -1,7 +1,8 @@
 import { fileURLToPath, URL } from 'node:url';
 
 import { defineConfig } from 'vite';
-import plugin from '@vitejs/plugin-react';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 import fs from 'fs';
 import path from 'path';
 import child_process from 'child_process';
@@ -34,9 +35,16 @@ if (!fs.existsSync(certFilePath) || !fs.existsSync(keyFilePath)) {
     }
 }
 
+
+const target = env.ASPNETCORE_HTTPS_PORT ? `https://localhost:${env.ASPNETCORE_HTTPS_PORT}` :
+    env.ASPNETCORE_URLS ? env.ASPNETCORE_URLS.split(';')[0] : 'https://localhost:7195';
+
 // https://vitejs.dev/config/
 export default defineConfig({
-    plugins: [plugin()],
+    plugins: [
+        tailwindcss(), // Leverages Tailwind's official Vite plugin for zero-config PostCSS integration.
+        react(),
+    ],
     resolve: {
         alias: {
             '@': fileURLToPath(new URL('./src', import.meta.url))
@@ -44,7 +52,14 @@ export default defineConfig({
     },
     server: {
         // Configure API proxies here when the backend exposes HTTP endpoints.
-        proxy: {},
+        proxy: {
+            // Forward all API traffic to the ASP.NET Core backend that listens on a different port during local development.
+            '/api': {
+                target,
+                changeOrigin: true,
+                secure: false, // Skip TLS verification because the dev certificate is self-signed and generated at runtime.
+            },
+        },
         port: parseInt(env.DEV_SERVER_PORT || '54501'),
         https: {
             key: fs.readFileSync(keyFilePath),
