@@ -2,13 +2,21 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { LoginPage } from './pages/LoginPage';
 import { PatientsPage } from './pages/PatientsPage';
+import { SignUpPage } from './pages/SignUpPage';
 
 export const App = () => {
     const { isAuthenticated } = useAuth();
 
     return (
         <Routes>
-            <Route path="/login" element={<LoginPage />} />
+            <Route
+                path="/login"
+                element={isAuthenticated ? <Navigate to="/patients" replace /> : <LoginPage />}
+            />
+            <Route
+                path="/signup"
+                element={isAuthenticated ? <Navigate to="/patients" replace /> : <SignUpPage />}
+            />
             <Route
                 path="/patients"
                 element={isAuthenticated ? <PatientsPage /> : <Navigate to="/login" replace />}

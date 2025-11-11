@@ -10,6 +10,7 @@ import {
 } from '@fluentui/react-components';
 import type { ChangeEvent } from 'react';
 import { memo, useCallback, useId } from 'react';
+import { Link } from 'react-router-dom';
 import { useLogin } from '../../hooks/useLogin';
 
 interface FieldProps {
@@ -161,6 +162,12 @@ export const LoginForm = () => {
                     Zaloguj się
                 </SubmitButton>
             </form>
+            <p className="mt-6 text-center text-sm text-slate-600 md:text-left">
+                Nie masz jeszcze konta?{' '}
+                <Link to="/signup" className="font-semibold text-sky-600 hover:text-sky-500">
+                    Zarejestruj się
+                </Link>
+            </p>
         </section>
     );
 };
