@@ -2,6 +2,7 @@ import { Button } from '@fluentui/react-components';
 import { memo, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { routes } from '../../routes';
 
 interface HeaderLink {
     label: string;
@@ -17,13 +18,13 @@ export const AppHeader = memo(() => {
     const navigationLinks: HeaderLink[] = [
         {
             label: 'Zaloguj się',
-            to: '/login',
-            isVisible: !isAuthenticated && location.pathname !== '/login',
+            to: routes.login,
+            isVisible: !isAuthenticated && location.pathname !== routes.login,
         },
         {
             label: 'Zarejestruj się',
-            to: '/signup',
-            isVisible: !isAuthenticated && location.pathname !== '/signup',
+            to: routes.signup,
+            isVisible: !isAuthenticated && location.pathname !== routes.signup,
         },
     ];
 
@@ -31,7 +32,7 @@ export const AppHeader = memo(() => {
         logout();
     }, [logout]);
 
-    const homeLink = isAuthenticated ? '/patients' : '/login';
+    const homeLink = isAuthenticated ? routes.patients : routes.login;
 
     return (
         <header className="border-b border-slate-200 bg-white/90 backdrop-blur">

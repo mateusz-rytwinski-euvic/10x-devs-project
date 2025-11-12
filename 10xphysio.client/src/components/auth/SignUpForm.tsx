@@ -16,6 +16,7 @@ import { Link } from 'react-router-dom';
 import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
 import { useSignUp } from '../../hooks/useSignUp';
+import { routes } from '../../routes';
 import type { AuthSignupCommand, SignUpFormErrors, SignUpFormViewModel } from '../../types/auth';
 
 const signUpSchema = z.object({
@@ -371,7 +372,7 @@ export const SignUpForm = () => {
             </form>
             <p className="mt-6 text-center text-sm text-slate-600 md:text-left">
                 Masz już konto?{' '}
-                <Link to="/login" className="font-semibold text-sky-600 hover:text-sky-500">
+                <Link to={routes.login} className="font-semibold text-sky-600 hover:text-sky-500">
                     Zaloguj się
                 </Link>
             </p>
