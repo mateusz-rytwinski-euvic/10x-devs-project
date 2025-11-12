@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
+import { ProtectedRoute } from './components/routing/ProtectedRoute';
 import { useAuth } from './hooks/useAuth';
 import { LoginPage } from './pages/LoginPage';
 import { PatientsPage } from './pages/PatientsPage';
@@ -19,7 +20,11 @@ export const App = () => {
             />
             <Route
                 path="/patients"
-                element={isAuthenticated ? <PatientsPage /> : <Navigate to="/login" replace />}
+                element={
+                    <ProtectedRoute>
+                        <PatientsPage />
+                    </ProtectedRoute>
+                }
             />
             <Route path="*" element={<Navigate to={isAuthenticated ? '/patients' : '/login'} replace />} />
         </Routes>
