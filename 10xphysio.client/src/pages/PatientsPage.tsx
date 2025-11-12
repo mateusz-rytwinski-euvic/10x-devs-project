@@ -1,6 +1,7 @@
 import { MessageBar, MessageBarBody, MessageBarTitle } from '@fluentui/react-components';
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AppLayout } from '../components/layout/AppLayout';
 import { PatientsHeader } from '../components/patients/Header';
 import { PatientsPagination } from '../components/patients/Pagination';
 import { PatientsList } from '../components/patients/PatientsList';
@@ -34,8 +35,8 @@ export const PatientsPage = () => {
     );
 
     return (
-        <section className="min-h-screen bg-neutral-50 py-10">
-            <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4">
+        <AppLayout mainClassName="bg-neutral-50 py-10">
+            <section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4">
                 <header className="flex flex-col gap-2">
                     <h1 className="text-3xl font-semibold text-slate-900">Panel pacjentów</h1>
                     <p className="text-base text-slate-600">
@@ -72,7 +73,7 @@ export const PatientsPage = () => {
                     totalPages={pagination.totalPages}
                     onPageChange={handlePageChange}
                 />
-            </div>
-        </section>
+            </section>
+        </AppLayout>
     );
 };

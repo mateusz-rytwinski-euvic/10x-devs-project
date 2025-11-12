@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { Navigate } from 'react-router-dom';
 import { LoginForm } from '../components/auth/LoginForm';
+import { AppLayout } from '../components/layout/AppLayout';
 import { useAuth } from '../hooks/useAuth';
 
 const LoginHero = memo(() => (
@@ -31,7 +32,7 @@ export const LoginPage = () => {
     }
 
     return (
-        <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 px-4 sm:px-6">
+        <AppLayout mainClassName="relative flex flex-1 items-center justify-center overflow-hidden bg-slate-950 px-4 sm:px-6">
             <div className="absolute inset-0 -z-20 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800" aria-hidden="true" />
             <div className="absolute -top-40 right-10 -z-10 h-72 w-72 rounded-full bg-sky-400/35 blur-3xl sm:right-24" aria-hidden="true" />
             <div className="absolute bottom-[-140px] left-[-80px] -z-10 h-96 w-96 rounded-full bg-emerald-400/25 blur-[120px] sm:left-[-60px]" aria-hidden="true" />
@@ -40,6 +41,6 @@ export const LoginPage = () => {
                 <LoginHero />
                 <LoginForm />
             </section>
-        </main>
+        </AppLayout>
     );
 };

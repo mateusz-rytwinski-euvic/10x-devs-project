@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { SignUpForm } from '../components/auth/SignUpForm';
+import { AppLayout } from '../components/layout/AppLayout';
 
 const SignUpIntro = memo(() => (
     <article className="max-w-xl text-center text-slate-100 md:text-left">
@@ -21,7 +22,7 @@ SignUpIntro.displayName = 'SignUpIntro';
 // The SignUpPage composes the sign-up experience and keeps presentation concerns separate from form logic.
 export const SignUpPage = () => {
     return (
-        <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 px-4 sm:px-6">
+        <AppLayout mainClassName="relative flex flex-1 items-center justify-center overflow-hidden bg-slate-950 px-4 sm:px-6">
             <div className="absolute inset-0 -z-20 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800" aria-hidden="true" />
             <div className="absolute -top-32 left-12 -z-10 h-72 w-72 rounded-full bg-emerald-400/30 blur-3xl sm:left-24" aria-hidden="true" />
             <div className="absolute bottom-[-160px] right-[-60px] -z-10 h-96 w-96 rounded-full bg-sky-400/30 blur-[120px] sm:right-[-40px]" aria-hidden="true" />
@@ -30,6 +31,6 @@ export const SignUpPage = () => {
                 <SignUpIntro />
                 <SignUpForm />
             </section>
-        </main>
+        </AppLayout>
     );
 };
