@@ -1,7 +1,10 @@
 import type { ComponentType } from 'react';
 import { LoginPage } from './pages/LoginPage';
+import { PatientDetailsPage } from './pages/PatientDetailsPage';
 import { PatientsPage } from './pages/PatientsPage';
 import { SignUpPage } from './pages/SignUpPage';
+import { VisitCreatePage } from './pages/VisitCreatePage';
+import { VisitDetailsPage } from './pages/VisitDetailsPage';
 
 /**
  * Centralized route definitions for the application.
@@ -11,6 +14,9 @@ export const routes = {
     login: '/login',
     signup: '/signup',
     patients: '/patients',
+    patientDetails: '/patients/:patientId',
+    patientVisitCreate: '/patients/:patientId/visits/new',
+    patientVisitDetails: '/patients/:patientId/visits/:visitId',
 } as const;
 
 /**
@@ -54,4 +60,37 @@ export const routeConfigs: RouteConfig[] = [
         component: PatientsPage,
         isProtected: true,
     },
+    {
+        path: routes.patientDetails,
+        component: PatientDetailsPage,
+        isProtected: true,
+    },
+    {
+        path: routes.patientVisitCreate,
+        component: VisitCreatePage,
+        isProtected: true,
+    },
+    {
+        path: routes.patientVisitDetails,
+        component: VisitDetailsPage,
+        isProtected: true,
+    },
 ];
+
+const replacePathParams = (path: string, params: Record<string, string>): string => {
+    return Object.entries(params).reduce((accumulator, [key, value]) => {
+        return accumulator.replace(`:${key}`, value);
+    }, path);
+};
+
+export const getPatientDetailsPath = (patientId: string): string => {
+    return replacePathParams(routes.patientDetails, { patientId });
+};
+
+export const getPatientVisitCreatePath = (patientId: string): string => {
+    return replacePathParams(routes.patientVisitCreate, { patientId });
+};
+
+export const getPatientVisitDetailsPath = (patientId: string, visitId: string): string => {
+    return replacePathParams(routes.patientVisitDetails, { patientId, visitId });
+};
