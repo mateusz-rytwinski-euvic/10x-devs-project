@@ -63,15 +63,8 @@ const toUtcIsoString = (value: string): string => {
     return parsed.toISOString();
 };
 
-const buildGenerationCommand = (description: string, regenerateFromGenerationId: string | null): VisitAiGenerationCommand => {
-    const trimmed = description.trim();
+const buildGenerationCommand = (_description: string, regenerateFromGenerationId: string | null): VisitAiGenerationCommand => {
     const command: VisitAiGenerationCommand = {};
-
-    if (trimmed.length > 0) {
-        command.promptOverrides = {
-            description: trimmed.length > 256 ? `${trimmed.slice(0, 253)}...` : trimmed,
-        };
-    }
 
     if (regenerateFromGenerationId) {
         command.regenerateFromGenerationId = regenerateFromGenerationId;

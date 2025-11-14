@@ -63,6 +63,8 @@ namespace _10xPhysio.Server.Services.VisitAiGenerations
             builder.AppendLine("- Focus on functional goals and measurable outcomes.");
             builder.AppendLine("- List specific exercises or interventions with brief rationale.");
             builder.AppendLine("- Highlight any precautions or follow-up considerations.");
+            builder.AppendLine("- Do not format response in any specific way such as markdown. Response should be simple text.");
+            builder.AppendLine("- Answer in the same language in which visit summary was provided.");
 
             return builder.ToString().Trim();
         }
