@@ -1,5 +1,6 @@
 import type { PaginatedResponseDto, PatientListRecord, PatientsQueryParams } from '../types/patient';
 import type {
+    PatientCreateCommand,
     PatientDetailsDto,
     PatientDetailsQueryOptions,
     PatientUpdateCommand,
@@ -8,7 +9,7 @@ import type {
 } from '../types/patientDetails';
 
 // PatientsEndpointError extends Error to carry the HTTP status for upstream error handling.
-class PatientsEndpointError extends Error {
+export class PatientsEndpointError extends Error {
     public readonly status?: number;
 
     public readonly validationErrors?: ValidationErrors;
@@ -158,6 +159,7 @@ const normalizePaginatedResponse = (
 };
 
 const PATIENT_DETAILS_ERROR_MESSAGE = 'Nie udało się pobrać szczegółów pacjenta. Spróbuj ponownie później.';
+const PATIENT_CREATE_ERROR_MESSAGE = 'Nie udało się utworzyć pacjenta. Spróbuj ponownie.';
 const PATIENT_UPDATE_ERROR_MESSAGE = 'Nie udało się zaktualizować danych pacjenta. Spróbuj ponownie.';
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {
@@ -265,6 +267,26 @@ const resolvePatientDetailsErrorMessage = (status: number | undefined, fallback:
     return fallback;
 };
 
+const resolvePatientCreateErrorMessage = (status: number | undefined, fallback: string): string => {
+    if (status === 400 || status === 422) {
+        return 'Nie udało się zapisać danych pacjenta. Sprawdź formularz i spróbuj ponownie.';
+    }
+
+    if (status === 401) {
+        return 'Sesja wygasła. Zaloguj się ponownie.';
+    }
+
+    if (status === 409) {
+        return 'Pacjent o podanych danych już istnieje.';
+    }
+
+    if (status === 502) {
+        return 'Serwis pacjentów jest chwilowo niedostępny. Spróbuj ponownie później.';
+    }
+
+    return fallback;
+};
+
 const resolvePatientUpdateErrorMessage = (status: number | undefined, fallback: string): string => {
     if (status === 400 || status === 422) {
         return 'Nie udało się zapisać zmian. Sprawdź poprawność danych.';
@@ -338,10 +360,13 @@ const mapVisitSummaryPayload = (input: unknown): VisitSummaryDto | null => {
     };
 };
 
-const normalizePatientDetailsPayload = (payload: unknown): PatientDetailsDto => {
+const normalizePatientDetailsPayload = (
+    payload: unknown,
+    fallbackMessage: string = PATIENT_DETAILS_ERROR_MESSAGE,
+): PatientDetailsDto => {
     if (!isRecord(payload)) {
-        console.error('Patient details endpoint returned a payload with unexpected shape.', payload);
-        throw new PatientsEndpointError(PATIENT_DETAILS_ERROR_MESSAGE);
+        console.error('Patient endpoint returned a payload with unexpected shape.', payload);
+        throw new PatientsEndpointError(fallbackMessage);
     }
 
     const id = toOptionalString(payload.id ?? payload.Id);
@@ -352,8 +377,8 @@ const normalizePatientDetailsPayload = (payload: unknown): PatientDetailsDto => 
     const eTag = toOptionalString(payload.eTag ?? payload.ETag) ?? '';
 
     if (!id || !createdAt || !updatedAt) {
-        console.error('Patient details payload missing required fields.', payload);
-        throw new PatientsEndpointError(PATIENT_DETAILS_ERROR_MESSAGE);
+        console.error('Patient payload missing required fields.', payload);
+        throw new PatientsEndpointError(fallbackMessage);
     }
 
     const dateOfBirthValue = payload.dateOfBirth ?? payload.DateOfBirth;
@@ -426,6 +451,64 @@ export const fetchPatients = async ({ token, query }: FetchPatientsOptions): Pro
     } catch (parseError) {
         console.error('Failed to parse patients endpoint response as JSON.', parseError);
         throw new PatientsEndpointError(DEFAULT_ERROR_MESSAGE, response.status);
+    }
+};
+
+interface CreatePatientOptions {
+    command: PatientCreateCommand;
+    token: string;
+}
+
+export const createPatient = async ({ command, token }: CreatePatientOptions): Promise<PatientDetailsDto> => {
+    if (!token) {
+        console.error('createPatient invoked without an access token.');
+        throw new PatientsEndpointError('Brak tokenu autoryzacyjnego.', 401);
+    }
+
+    const url = PATIENTS_ENDPOINT;
+
+    let response: Response;
+
+    try {
+        response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(command),
+        });
+    } catch (networkError) {
+        console.error('Network request to create patient failed before reaching the server.', networkError);
+        throw new PatientsEndpointError('Nie udało się połączyć z serwerem pacjentów.', undefined);
+    }
+
+    if (!response.ok) {
+        const errorPayload = await readErrorResponse(response);
+        const validationErrors =
+            response.status === 400 || response.status === 422 ? extractValidationErrors(errorPayload) : undefined;
+        const correlationId = extractCorrelationId(errorPayload);
+        const messageFromPayload = extractMessage(errorPayload);
+        const message = resolvePatientCreateErrorMessage(
+            response.status,
+            messageFromPayload ?? PATIENT_CREATE_ERROR_MESSAGE,
+        );
+
+        console.error('Patient create endpoint responded with a non-success status.', {
+            status: response.status,
+            message,
+            payload: errorPayload,
+        });
+
+        throw new PatientsEndpointError(message, response.status, validationErrors, correlationId);
+    }
+
+    try {
+        const payload = await response.json();
+        return normalizePatientDetailsPayload(payload, PATIENT_CREATE_ERROR_MESSAGE);
+    } catch (parseError) {
+        console.error('Failed to parse patient create response.', parseError);
+        throw new PatientsEndpointError(PATIENT_CREATE_ERROR_MESSAGE, response.status);
     }
 };
 
@@ -549,7 +632,7 @@ export const updatePatient = async ({ patientId, command, token, etag }: UpdateP
 
     try {
         const payload = await response.json();
-        return normalizePatientDetailsPayload(payload);
+        return normalizePatientDetailsPayload(payload, PATIENT_UPDATE_ERROR_MESSAGE);
     } catch (parseError) {
         console.error('Failed to parse patient update response.', parseError);
         throw new PatientsEndpointError(PATIENT_UPDATE_ERROR_MESSAGE, response.status);

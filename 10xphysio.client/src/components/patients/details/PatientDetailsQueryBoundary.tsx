@@ -1,10 +1,9 @@
 import { Button, MessageBar, MessageBarBody, Spinner } from '@fluentui/react-components';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useEditPatient } from '../../../hooks/useEditPatient';
 import { usePatientDetails } from '../../../hooks/usePatientDetails';
 import { useToast } from '../../../hooks/useToast';
-import { getPatientVisitCreatePath, getPatientVisitDetailsPath, routes } from '../../../routes';
+import { getPatientEditPath, getPatientVisitCreatePath, getPatientVisitDetailsPath, routes } from '../../../routes';
 import type { PatientDetailsQueryOptions } from '../../../types/patientDetails';
 import { PatientDetailsLayout } from './PatientDetailsLayout';
 
@@ -38,35 +37,6 @@ export const PatientDetailsQueryBoundary = memo(
             visitsLimit: visitLimitState,
         });
 
-        const editPatient = useEditPatient({
-            patientId,
-            etag: data?.eTag ?? '',
-            initialState: {
-                firstName: data?.firstName ?? '',
-                lastName: data?.lastName ?? '',
-                dateOfBirth: data?.dateOfBirth ?? null,
-            },
-            onSuccess: async () => {
-                pushToast({ intent: 'success', text: 'Dane pacjenta zostały zapisane.' });
-                await refetch();
-            },
-            onConflict: async () => {
-                pushToast({ intent: 'error', text: 'Dane pacjenta uległy zmianie. Odświeżono szczegóły.' });
-                await refetch();
-            },
-            onNotFound: () => {
-                pushToast({ intent: 'error', text: 'Pacjent nie został znaleziony. Przywrócono listę pacjentów.' });
-                navigate(routes.patients, { replace: true });
-            },
-            onUnauthorized: () => {
-                pushToast({ intent: 'error', text: 'Sesja wygasła. Zaloguj się ponownie.' });
-                navigate(routes.login, { replace: true });
-            },
-            onError: (message) => {
-                pushToast({ intent: 'error', text: message });
-            },
-        });
-
         const handleRetry = useCallback(() => {
             void refetch();
         }, [refetch]);
@@ -89,6 +59,10 @@ export const PatientDetailsQueryBoundary = memo(
             },
             [navigate, patientId],
         );
+
+        const handleEditPatient = useCallback(() => {
+            navigate(getPatientEditPath(patientId));
+        }, [navigate, patientId]);
 
         const content = useMemo(() => {
             if (isLoading) {
@@ -123,17 +97,17 @@ export const PatientDetailsQueryBoundary = memo(
             return (
                 <PatientDetailsLayout
                     patient={data}
-                    editPatient={editPatient}
                     visitLimit={visitLimitState}
                     onChangeVisitLimit={handleVisitLimitChange}
                     onAddVisit={handleAddVisit}
                     onSelectVisit={handleSelectVisit}
+                    onEditPatient={handleEditPatient}
                 />
             );
         }, [
             data,
-            editPatient,
             handleAddVisit,
+            handleEditPatient,
             handleRetry,
             handleSelectVisit,
             handleVisitLimitChange,

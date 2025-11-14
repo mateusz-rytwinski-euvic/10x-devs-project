@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 import { LoginPage } from './pages/LoginPage';
 import { PatientDetailsPage } from './pages/PatientDetailsPage';
+import { PatientFormPage } from './pages/PatientFormPage';
 import { PatientsPage } from './pages/PatientsPage';
 import { SignUpPage } from './pages/SignUpPage';
 import { VisitDetailsPage } from './pages/VisitDetailsPage';
@@ -15,6 +16,8 @@ export const routes = {
     signup: '/signup',
     patients: '/patients',
     patientDetails: '/patients/:patientId',
+    patientCreate: '/patients/new',
+    patientEdit: '/patients/:patientId/edit',
     patientVisitCreate: '/patients/:patientId/visits/new',
     patientVisitForm: '/patients/:patientId/visits/:visitId',
     patientVisitDetails: '/patients/:patientId/visits/:visitId/details',
@@ -67,6 +70,16 @@ export const routeConfigs: RouteConfig[] = [
         isProtected: true,
     },
     {
+        path: routes.patientCreate,
+        component: PatientFormPage,
+        isProtected: true,
+    },
+    {
+        path: routes.patientEdit,
+        component: PatientFormPage,
+        isProtected: true,
+    },
+    {
         path: routes.patientVisitCreate,
         component: VisitFormPage,
         isProtected: true,
@@ -91,6 +104,14 @@ const replacePathParams = (path: string, params: Record<string, string>): string
 
 export const getPatientDetailsPath = (patientId: string): string => {
     return replacePathParams(routes.patientDetails, { patientId });
+};
+
+export const getPatientCreatePath = (): string => {
+    return routes.patientCreate;
+};
+
+export const getPatientEditPath = (patientId: string): string => {
+    return replacePathParams(routes.patientEdit, { patientId });
 };
 
 export const getPatientVisitCreatePath = (patientId: string): string => {

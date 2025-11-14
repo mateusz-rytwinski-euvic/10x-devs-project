@@ -6,7 +6,7 @@ import { PatientsHeader } from '../components/patients/Header';
 import { PatientsPagination } from '../components/patients/Pagination';
 import { PatientsList } from '../components/patients/PatientsList';
 import { usePatientsViewModel } from '../hooks/usePatientsViewModel';
-import { getPatientDetailsPath } from '../routes';
+import { getPatientCreatePath, getPatientDetailsPath } from '../routes';
 
 // PatientsPage composes the patients dashboard view by connecting the view model hook with UI components.
 export const PatientsPage = () => {
@@ -25,7 +25,7 @@ export const PatientsPage = () => {
     } = usePatientsViewModel();
 
     const handleAddPatient = useCallback(() => {
-        navigate('/patients/new');
+        navigate(getPatientCreatePath());
     }, [navigate]);
 
     const handlePatientSelect = useCallback(

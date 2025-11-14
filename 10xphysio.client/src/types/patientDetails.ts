@@ -27,6 +27,15 @@ export interface VisitSummaryDto {
 }
 
 /**
+ * Command payload for creating a new patient.
+ */
+export interface PatientCreateCommand {
+    firstName: string;
+    lastName: string;
+    dateOfBirth?: string | null;
+}
+
+/**
  * Command payload for updating patient demographics.
  */
 export interface PatientUpdateCommand {
@@ -34,6 +43,7 @@ export interface PatientUpdateCommand {
     lastName: string;
     dateOfBirth?: string | null;
 }
+
 
 /**
  * Standard API message returned by the backend for operations.
@@ -85,15 +95,6 @@ export interface VisitSummaryViewModel {
 }
 
 /**
- * State tracked by the patient edit form.
- */
-export interface EditPatientFormState {
-    firstName: string;
-    lastName: string;
-    dateOfBirth?: string | null;
-}
-
-/**
  * Validation errors surfaced to the patient edit form.
  */
 export interface ValidationErrors {
@@ -116,17 +117,3 @@ export interface UsePatientDetailsResult {
 /**
  * Contract returned from the patient edit hook.
  */
-export interface UseEditPatientResult {
-    editing: boolean;
-    start: () => void;
-    cancel: () => void;
-    submit: (command: PatientUpdateCommand) => Promise<void>;
-    isSaving: boolean;
-    errors: ValidationErrors;
-    formState: EditPatientFormState;
-    setFieldValue: <TKey extends keyof EditPatientFormState>(
-        field: TKey,
-        value: EditPatientFormState[TKey],
-    ) => void;
-    resetErrors: () => void;
-}

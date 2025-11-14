@@ -1,7 +1,7 @@
 import type { SelectTabData, SelectTabEvent, TabValue } from '@fluentui/react-components';
 import { Tab, TabList } from '@fluentui/react-components';
 import { useCallback, useMemo, useState } from 'react';
-import type { PatientDetailsViewModel, UseEditPatientResult } from '../../../types/patientDetails';
+import type { PatientDetailsViewModel } from '../../../types/patientDetails';
 import { PatientBreadcrumb } from './PatientBreadcrumb';
 import { PatientDemographicsPanel } from './demographics/PatientDemographicsPanel';
 import { PatientVisitsPanel } from './visits/PatientVisitsPanel';
@@ -10,20 +10,20 @@ export type PatientDetailsTab = 'demographics' | 'visits';
 
 interface PatientDetailsLayoutProps {
     patient: PatientDetailsViewModel;
-    editPatient: UseEditPatientResult;
     visitLimit: number;
     onChangeVisitLimit: (nextLimit: number) => void;
     onAddVisit: () => void;
     onSelectVisit: (visitId: string) => void;
+    onEditPatient: () => void;
 }
 
 export const PatientDetailsLayout = ({
     patient,
-    editPatient,
     visitLimit,
     onChangeVisitLimit,
     onAddVisit,
     onSelectVisit,
+    onEditPatient,
 }: PatientDetailsLayoutProps) => {
     const [activeTab, setActiveTab] = useState<PatientDetailsTab>('demographics');
 
@@ -71,7 +71,7 @@ export const PatientDetailsLayout = ({
                 {tabList}
 
                 {activeTab === 'demographics' ? (
-                    <PatientDemographicsPanel patient={patient} editPatient={editPatient} />
+                    <PatientDemographicsPanel patient={patient} onEdit={onEditPatient} />
                 ) : null}
 
                 {activeTab === 'visits' ? (
