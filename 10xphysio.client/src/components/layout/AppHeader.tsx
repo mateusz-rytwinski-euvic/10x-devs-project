@@ -1,4 +1,5 @@
 import { Button } from '@fluentui/react-components';
+import { SignOut20Regular } from '@fluentui/react-icons';
 import { memo, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
@@ -57,7 +58,13 @@ export const AppHeader = memo(() => {
                     {isAuthenticated ? (
                         <>
                             {/* Fluent UI button ensures focus-visible styling without extra work, keeping the header accessible. */}
-                            <Button appearance="primary" size="small" onClick={handleLogout}>
+                            {/* Adding a sign-out icon improves immediate recognition of the logout action, especially for quick scanning users. */}
+                            <Button
+                                appearance="primary"
+                                size="small"
+                                icon={<SignOut20Regular />}
+                                onClick={handleLogout}
+                            >
                                 Wyloguj
                             </Button>
                         </>
