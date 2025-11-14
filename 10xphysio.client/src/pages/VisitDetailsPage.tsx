@@ -1,11 +1,11 @@
 import { Badge, Button, MessageBar, MessageBarBody, Spinner } from '@fluentui/react-components';
-import { ArrowLeftRegular, ClipboardTaskListLtrRegular, ClockRegular } from '@fluentui/react-icons';
+import { ArrowLeftRegular, ClipboardTaskListLtrRegular, ClockRegular, EditRegular } from '@fluentui/react-icons';
 import { useCallback, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AppLayout } from '../components/layout/AppLayout';
 import { useToast } from '../hooks/useToast';
 import { useVisitDetails } from '../hooks/useVisitDetails';
-import { getPatientDetailsPath, getPatientVisitDetailsPath, routes } from '../routes';
+import { getPatientDetailsPath, getPatientVisitDetailsPath, getPatientVisitFormPath, routes } from '../routes';
 import { isValidGuid } from '../utils/guid';
 
 const renderTextBlock = (title: string, content: string | null | undefined) => {
@@ -69,6 +69,18 @@ export const VisitDetailsPage = () => {
     const handleRetry = useCallback(() => {
         void visitQuery.refetch();
     }, [visitQuery]);
+
+    const resolvedPatientId = visitQuery.data?.patientId ?? patientId ?? null;
+    const resolvedVisitId = visitQuery.data?.id ?? visitId ?? null;
+
+    const handleEdit = useCallback(() => {
+        if (!resolvedPatientId || !isValidGuid(resolvedPatientId) || !resolvedVisitId) {
+            pushToast({ intent: 'error', text: 'Nie udało się przejść do edycji wizyty.' });
+            return;
+        }
+
+        navigate(getPatientVisitFormPath(resolvedPatientId, resolvedVisitId));
+    }, [navigate, pushToast, resolvedPatientId, resolvedVisitId]);
 
     const content = useMemo(() => {
         if (visitQuery.isLoading) {
@@ -164,14 +176,17 @@ export const VisitDetailsPage = () => {
                     </div>
                 ) : null}
 
-                <div className="flex justify-end">
+                <div className="flex flex-wrap justify-end gap-3">
+                    <Button appearance="primary" icon={<EditRegular />} onClick={handleEdit}>
+                        Edytuj wizytę
+                    </Button>
                     <Button appearance="secondary" icon={<ArrowLeftRegular />} onClick={handleBack}>
                         Wróć do pacjenta
                     </Button>
                 </div>
             </div>
         );
-    }, [handleBack, handleRetry, visitQuery.data, visitQuery.isError, visitQuery.isLoading]);
+    }, [handleBack, handleEdit, handleRetry, visitQuery.data, visitQuery.isError, visitQuery.isLoading]);
 
     return (
         <AppLayout mainClassName="bg-neutral-50 py-10">

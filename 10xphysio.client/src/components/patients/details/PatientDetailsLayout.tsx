@@ -54,7 +54,7 @@ export const PatientDetailsLayout = ({
                 ))}
             </TabList>
         );
-    }, [activeTab, handleTabSelect, patient.visits?.length]);
+    }, [activeTab, handleTabSelect]);
 
     return (
         <div className="flex flex-col gap-6">

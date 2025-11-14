@@ -17,11 +17,13 @@ export interface PatientDetailsDto {
  */
 export interface VisitSummaryDto {
     id: string;
+    patientId: string;
     visitDate: string;
-    description: string;
-    hasRecommendations: boolean;
-    updatedAt: string;
-    eTag?: string;
+    interview?: string | null;
+    description?: string | null;
+    recommendations?: string | null;
+    recommendationsGeneratedByAi: boolean;
+    recommendationsGeneratedAt?: string | null;
 }
 
 /**

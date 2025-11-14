@@ -1,4 +1,12 @@
-import type { VisitCreateCommand, VisitDto } from '../types/visit';
+import type {
+    VisitAiGenerationCommand,
+    VisitAiGenerationCreatedDto,
+    VisitCreateCommand,
+    VisitDto,
+    VisitRecommendationCommand,
+    VisitRecommendationStateDto,
+    VisitUpdateCommand,
+} from '../types/visit';
 
 type NullableString = string | null | undefined;
 
@@ -33,6 +41,10 @@ const VISITS_ENDPOINT = '/api/visits';
 
 const CREATE_VISIT_FALLBACK_MESSAGE = 'Nie udało się utworzyć wizyty. Spróbuj ponownie później.';
 const GET_VISIT_FALLBACK_MESSAGE = 'Nie udało się pobrać danych wizyty. Spróbuj ponownie.';
+const UPDATE_VISIT_FALLBACK_MESSAGE = 'Nie udało się zaktualizować wizyty. Spróbuj ponownie.';
+const GENERATE_RECOMMENDATIONS_FALLBACK_MESSAGE = 'Nie udało się wygenerować zaleceń. Spróbuj ponownie.';
+const SAVE_RECOMMENDATIONS_FALLBACK_MESSAGE = 'Nie udało się zapisać zaleceń. Spróbuj ponownie.';
+const DELETE_VISIT_FALLBACK_MESSAGE = 'Nie udało się usunąć wizyty. Spróbuj ponownie.';
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {
     return typeof value === 'object' && value !== null;
@@ -97,6 +109,7 @@ const normalizeVisitPayload = (payload: unknown): VisitDto => {
     const createdAt = toOptionalString(payload.createdAt ?? payload.CreatedAt);
     const updatedAt = toOptionalString(payload.updatedAt ?? payload.UpdatedAt);
     const eTag = toOptionalString(payload.eTag ?? payload.ETag) ?? '';
+    const therapistId = toOptionalString(payload.therapistId ?? (payload as { TherapistId?: unknown }).TherapistId);
 
     if (!id || !patientId || !visitDate || !createdAt || !updatedAt || !eTag) {
         console.error('Visit payload missing required fields.', payload);
@@ -121,6 +134,7 @@ const normalizeVisitPayload = (payload: unknown): VisitDto => {
                 ? (payload as { AiGenerationCount: number }).AiGenerationCount
                 : null,
         latestAiGenerationId: toOptionalString(payload.latestAiGenerationId ?? (payload as { LatestAiGenerationId?: unknown }).LatestAiGenerationId),
+        therapistId: therapistId ?? null,
     };
 };
 
@@ -168,6 +182,94 @@ const resolveGetVisitErrorMessage = (status: number | undefined, fallback: strin
     return fallback;
 };
 
+const resolveUpdateVisitErrorMessage = (status: number | undefined, fallback: string): string => {
+    if (status === 400 || status === 422) {
+        return 'Nie udało się zaktualizować wizyty. Sprawdź poprawność danych.';
+    }
+
+    if (status === 401) {
+        return 'Sesja wygasła. Zaloguj się ponownie.';
+    }
+
+    if (status === 403) {
+        return 'Nie masz uprawnień do edycji tej wizyty.';
+    }
+
+    if (status === 404) {
+        return 'Wizyta nie istnieje lub została usunięta.';
+    }
+
+    if (status === 409 || status === 412) {
+        return 'Wizyta została zmodyfikowana w międzyczasie. Odśwież dane i spróbuj ponownie.';
+    }
+
+    if (status === 502) {
+        return 'Serwis wizyt jest chwilowo niedostępny. Spróbuj ponownie później.';
+    }
+
+    return fallback;
+};
+
+const resolveGenerateRecommendationsErrorMessage = (status: number | undefined, fallback: string): string => {
+    if (status === 400 || status === 422) {
+        return 'Opis wizyty jest niewystarczający do wygenerowania zaleceń.';
+    }
+
+    if (status === 401) {
+        return 'Sesja wygasła. Zaloguj się ponownie.';
+    }
+
+    if (status === 403) {
+        return 'Nie masz uprawnień do generowania zaleceń dla tej wizyty.';
+    }
+
+    if (status === 404) {
+        return 'Nie znaleziono wizyty.';
+    }
+
+    if (status === 409 || status === 412) {
+        return 'Dane wizyty uległy zmianie. Odśwież stronę i spróbuj ponownie.';
+    }
+
+    if (status === 429) {
+        return 'Limit generowania zaleceń został chwilowo wyczerpany. Spróbuj ponownie za chwilę.';
+    }
+
+    if (status === 502) {
+        return 'Usługa AI jest chwilowo niedostępna. Spróbuj ponownie później.';
+    }
+
+    return fallback;
+};
+
+const resolveSaveRecommendationsErrorMessage = (status: number | undefined, fallback: string): string => {
+    if (status === 400 || status === 422) {
+        return 'Nie udało się zapisać zaleceń. Sprawdź poprawność treści.';
+    }
+
+    if (status === 401) {
+        return 'Sesja wygasła. Zaloguj się ponownie.';
+    }
+
+    if (status === 403) {
+        return 'Nie masz uprawnień do zapisywania zaleceń dla tej wizyty.';
+    }
+
+    if (status === 404) {
+        return 'Nie znaleziono wizyty.';
+    }
+
+    if (status === 409 || status === 412) {
+        return 'Dane wizyty zostały zmienione. Odśwież dane i spróbuj ponownie.';
+    }
+
+    if (status === 502) {
+        return 'Serwis wizyt jest chwilowo niedostępny. Spróbuj ponownie później.';
+    }
+
+    return fallback;
+};
+
 const ensureToken = (token: NullableString, errorMessage: string): string => {
     if (!token) {
         console.error('visit service invoked without an access token.');
@@ -175,6 +277,72 @@ const ensureToken = (token: NullableString, errorMessage: string): string => {
     }
 
     return token;
+};
+
+const normalizeAiGenerationPayload = (payload: unknown): VisitAiGenerationCreatedDto => {
+    if (!isRecord(payload)) {
+        console.error('AI generation endpoint returned unexpected payload.', payload);
+        throw new VisitsEndpointError(GENERATE_RECOMMENDATIONS_FALLBACK_MESSAGE);
+    }
+
+    const generationId = toOptionalString(payload.generationId ?? payload.GenerationId);
+    const status = toOptionalString(payload.status ?? payload.Status) ?? 'unknown';
+    const model = toOptionalString(payload.model ?? payload.Model) ?? 'unknown';
+    const prompt = toOptionalString(payload.prompt ?? payload.Prompt) ?? '';
+    const aiResponse = toOptionalString(payload.aiResponse ?? payload.AiResponse) ?? '';
+    const recommendationsPreview = toOptionalString(payload.recommendationsPreview ?? payload.RecommendationsPreview) ?? '';
+    const createdAt = toOptionalString(payload.createdAt ?? payload.CreatedAt);
+
+    const rawTemperature = (payload.temperature ?? (payload as { Temperature?: unknown }).Temperature);
+    const temperature = typeof rawTemperature === 'number'
+        ? rawTemperature
+        : typeof rawTemperature === 'string'
+            ? Number.parseFloat(rawTemperature)
+            : undefined;
+
+    if (!generationId || !createdAt) {
+        console.error('AI generation payload is missing required identifiers.', payload);
+        throw new VisitsEndpointError(GENERATE_RECOMMENDATIONS_FALLBACK_MESSAGE);
+    }
+
+    return {
+        generationId,
+        status,
+        model,
+        temperature: Number.isNaN(temperature) ? undefined : temperature,
+        prompt,
+        aiResponse,
+        recommendationsPreview,
+        createdAt,
+    };
+};
+
+const normalizeRecommendationStatePayload = (payload: unknown): VisitRecommendationStateDto => {
+    if (!isRecord(payload)) {
+        console.error('Recommendation endpoint returned unexpected payload.', payload);
+        throw new VisitsEndpointError(SAVE_RECOMMENDATIONS_FALLBACK_MESSAGE);
+    }
+
+    const id = toOptionalString(payload.id ?? payload.Id);
+    const recommendations = toOptionalString(payload.recommendations ?? payload.Recommendations) ?? '';
+    const createdAt = toOptionalString(payload.updatedAt ?? payload.UpdatedAt);
+    const eTag = toOptionalString(payload.eTag ?? payload.ETag) ?? '';
+    const recommendationsGeneratedAt = toOptionalString(payload.recommendationsGeneratedAt ?? payload.RecommendationsGeneratedAt);
+    const recommendationsGeneratedByAi = Boolean(payload.recommendationsGeneratedByAi ?? payload.RecommendationsGeneratedByAi);
+
+    if (!id || !createdAt || !eTag) {
+        console.error('Recommendation payload missing required fields.', payload);
+        throw new VisitsEndpointError(SAVE_RECOMMENDATIONS_FALLBACK_MESSAGE);
+    }
+
+    return {
+        id,
+        recommendations,
+        recommendationsGeneratedByAi,
+        recommendationsGeneratedAt,
+        updatedAt: createdAt,
+        eTag,
+    };
 };
 
 /**
@@ -281,5 +449,235 @@ export const getVisit = async (visitId: string, token: NullableString): Promise<
     } catch (parseError) {
         console.error('Failed to parse visit response.', parseError);
         throw new VisitsEndpointError(GET_VISIT_FALLBACK_MESSAGE, response.status);
+    }
+};
+
+/**
+ * updateVisit executes PATCH /visits/{visitId} with ETag concurrency control.
+ */
+export const updateVisit = async (
+    visitId: string,
+    command: VisitUpdateCommand,
+    token: NullableString,
+    etag: string,
+): Promise<VisitDto> => {
+    const resolvedToken = ensureToken(token, 'Brak tokenu autoryzacyjnego.');
+
+    if (!visitId) {
+        throw new VisitsEndpointError('Nieprawidłowy identyfikator wizyty.', 400);
+    }
+
+    if (!etag || etag.trim().length === 0) {
+        throw new VisitsEndpointError('Brak etykiety wersji danych wizyty (ETag).', 428);
+    }
+
+    const url = `${VISITS_ENDPOINT}/${encodeURIComponent(visitId)}`;
+
+    let response: Response;
+
+    try {
+        response = await fetch(url, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${resolvedToken}`,
+                'If-Match': etag,
+            },
+            body: JSON.stringify(command),
+        });
+    } catch (networkError) {
+        console.error('Network request to update visit failed.', networkError);
+        throw new VisitsEndpointError(UPDATE_VISIT_FALLBACK_MESSAGE);
+    }
+
+    if (!response.ok) {
+        const errorPayload = await readErrorResponse(response);
+        const message = resolveUpdateVisitErrorMessage(
+            response.status,
+            extractMessage(errorPayload) ?? UPDATE_VISIT_FALLBACK_MESSAGE,
+        );
+        const correlationId = extractCorrelationId(errorPayload);
+
+        console.error('Update visit endpoint responded with non-success status.', {
+            status: response.status,
+            payload: errorPayload,
+        });
+
+        throw new VisitsEndpointError(message, response.status, correlationId);
+    }
+
+    try {
+        const payload = await response.json();
+        return normalizeVisitPayload(payload);
+    } catch (parseError) {
+        console.error('Failed to parse update visit response payload.', parseError);
+        throw new VisitsEndpointError(UPDATE_VISIT_FALLBACK_MESSAGE, response.status);
+    }
+};
+
+/**
+ * generateVisitRecommendations executes POST /visits/{visitId}/ai-generation.
+ */
+export const generateVisitRecommendations = async (
+    visitId: string,
+    command: VisitAiGenerationCommand,
+    token: NullableString,
+): Promise<VisitAiGenerationCreatedDto> => {
+    const resolvedToken = ensureToken(token, 'Brak tokenu autoryzacyjnego.');
+
+    if (!visitId) {
+        throw new VisitsEndpointError('Nieprawidłowy identyfikator wizyty.', 400);
+    }
+
+    const url = `${VISITS_ENDPOINT}/${encodeURIComponent(visitId)}/ai-generation`;
+
+    let response: Response;
+
+    try {
+        response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${resolvedToken}`,
+            },
+            body: JSON.stringify(command ?? {}),
+        });
+    } catch (networkError) {
+        console.error('Network request to generate AI recommendations failed.', networkError);
+        throw new VisitsEndpointError(GENERATE_RECOMMENDATIONS_FALLBACK_MESSAGE);
+    }
+
+    if (!response.ok) {
+        const errorPayload = await readErrorResponse(response);
+        const message = resolveGenerateRecommendationsErrorMessage(
+            response.status,
+            extractMessage(errorPayload) ?? GENERATE_RECOMMENDATIONS_FALLBACK_MESSAGE,
+        );
+        const correlationId = extractCorrelationId(errorPayload);
+
+        console.error('Generate recommendations endpoint responded with non-success status.', {
+            status: response.status,
+            payload: errorPayload,
+        });
+
+        throw new VisitsEndpointError(message, response.status, correlationId);
+    }
+
+    try {
+        const payload = await response.json();
+        return normalizeAiGenerationPayload(payload);
+    } catch (parseError) {
+        console.error('Failed to parse generate recommendations response payload.', parseError);
+        throw new VisitsEndpointError(GENERATE_RECOMMENDATIONS_FALLBACK_MESSAGE, response.status);
+    }
+};
+
+/**
+ * saveVisitRecommendations executes PUT /visits/{visitId}/recommendations guarded by ETag.
+ */
+export const saveVisitRecommendations = async (
+    visitId: string,
+    command: VisitRecommendationCommand,
+    token: NullableString,
+    etag: string,
+): Promise<VisitRecommendationStateDto> => {
+    const resolvedToken = ensureToken(token, 'Brak tokenu autoryzacyjnego.');
+
+    if (!visitId) {
+        throw new VisitsEndpointError('Nieprawidłowy identyfikator wizyty.', 400);
+    }
+
+    if (!command.recommendations || command.recommendations.trim().length === 0) {
+        throw new VisitsEndpointError('Treść zaleceń nie może być pusta.', 422);
+    }
+
+    if (!etag || etag.trim().length === 0) {
+        throw new VisitsEndpointError('Brak etykiety wersji danych wizyty (ETag).', 428);
+    }
+
+    const url = `${VISITS_ENDPOINT}/${encodeURIComponent(visitId)}/recommendations`;
+
+    let response: Response;
+
+    try {
+        response = await fetch(url, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${resolvedToken}`,
+                'If-Match': etag,
+            },
+            body: JSON.stringify(command),
+        });
+    } catch (networkError) {
+        console.error('Network request to save visit recommendations failed.', networkError);
+        throw new VisitsEndpointError(SAVE_RECOMMENDATIONS_FALLBACK_MESSAGE);
+    }
+
+    if (!response.ok) {
+        const errorPayload = await readErrorResponse(response);
+        const message = resolveSaveRecommendationsErrorMessage(
+            response.status,
+            extractMessage(errorPayload) ?? SAVE_RECOMMENDATIONS_FALLBACK_MESSAGE,
+        );
+        const correlationId = extractCorrelationId(errorPayload);
+
+        console.error('Save recommendations endpoint responded with non-success status.', {
+            status: response.status,
+            payload: errorPayload,
+        });
+
+        throw new VisitsEndpointError(message, response.status, correlationId);
+    }
+
+    try {
+        const payload = await response.json();
+        return normalizeRecommendationStatePayload(payload);
+    } catch (parseError) {
+        console.error('Failed to parse save recommendations response payload.', parseError);
+        throw new VisitsEndpointError(SAVE_RECOMMENDATIONS_FALLBACK_MESSAGE, response.status);
+    }
+};
+
+/**
+ * deleteVisit executes DELETE /visits/{visitId}.
+ */
+export const deleteVisit = async (visitId: string, token: NullableString): Promise<void> => {
+    const resolvedToken = ensureToken(token, 'Brak tokenu autoryzacyjnego.');
+
+    if (!visitId) {
+        throw new VisitsEndpointError('Nieprawidłowy identyfikator wizyty.', 400);
+    }
+
+    const url = `${VISITS_ENDPOINT}/${encodeURIComponent(visitId)}`;
+
+    let response: Response;
+
+    try {
+        response = await fetch(url, {
+            method: 'DELETE',
+            headers: {
+                Authorization: `Bearer ${resolvedToken}`,
+            },
+        });
+    } catch (networkError) {
+        console.error('Network request to delete visit failed.', networkError);
+        throw new VisitsEndpointError(DELETE_VISIT_FALLBACK_MESSAGE);
+    }
+
+    if (!response.ok) {
+        const errorPayload = await readErrorResponse(response);
+        const message = resolveGetVisitErrorMessage(
+            response.status,
+            extractMessage(errorPayload) ?? DELETE_VISIT_FALLBACK_MESSAGE,
+        );
+        const correlationId = extractCorrelationId(errorPayload);
+
+        console.error('Delete visit endpoint responded with non-success status.', {
+            status: response.status,
+            payload: errorPayload,
+        });
+
+        throw new VisitsEndpointError(message, response.status, correlationId);
     }
 };

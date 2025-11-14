@@ -309,28 +309,32 @@ const mapVisitSummaryPayload = (input: unknown): VisitSummaryDto | null => {
     }
 
     const id = toOptionalString(input.id ?? input.Id);
+    const patientId = toOptionalString(input.patientId ?? input.PatientId);
     const visitDate = toOptionalString(input.visitDate ?? input.VisitDate);
 
-    if (!id || !visitDate) {
+    if (!id || !visitDate || !patientId) {
         return null;
     }
 
-    const description = toOptionalString(input.description ?? input.Description) ?? '';
+    const interview = toOptionalString(input.interview ?? input.Interview);
+    const description = toOptionalString(input.description ?? input.Description);
     const recommendations = toOptionalString(input.recommendations ?? input.Recommendations);
-    const hasRecommendationsCandidate = input.hasRecommendations ?? input.HasRecommendations;
-    const hasRecommendations = typeof hasRecommendationsCandidate === 'boolean'
-        ? hasRecommendationsCandidate
+    const aiFlagCandidate = input.recommendationsGeneratedByAi ?? input.RecommendationsGeneratedByAi;
+    const recommendationsGeneratedByAi = typeof aiFlagCandidate === 'boolean'
+        ? aiFlagCandidate
         : Boolean(recommendations && recommendations.trim().length > 0);
-    const updatedAt = toOptionalString(input.updatedAt ?? input.UpdatedAt) ?? visitDate;
-    const eTag = toOptionalString(input.eTag ?? input.ETag) ?? undefined;
+    const generatedAtValue = input.recommendationsGeneratedAt ?? input.RecommendationsGeneratedAt;
+    const recommendationsGeneratedAt = typeof generatedAtValue === 'string' ? generatedAtValue : null;
 
     return {
         id,
+        patientId,
         visitDate,
-        description,
-        hasRecommendations,
-        updatedAt,
-        eTag,
+        interview: interview ?? null,
+        description: description ?? null,
+        recommendations: recommendations ?? null,
+        recommendationsGeneratedByAi,
+        recommendationsGeneratedAt,
     };
 };
 

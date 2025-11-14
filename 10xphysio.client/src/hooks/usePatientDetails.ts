@@ -30,8 +30,11 @@ const mapVisitSummary = (visit: VisitSummaryDto): VisitSummaryViewModel => ({
     id: visit.id,
     dateLabel: formatPolishDateTime(visit.visitDate, 'Brak daty wizyty'),
     shortDescription: visit.description?.trim() ?? '',
-    hasRecommendations: visit.hasRecommendations,
-    updatedAtLabel: formatPolishDateTime(visit.updatedAt, 'Brak danych'),
+    hasRecommendations: Boolean(
+        (visit.recommendations && visit.recommendations.trim().length > 0)
+        || visit.recommendationsGeneratedByAi,
+    ),
+    updatedAtLabel: formatPolishDateTime(visit.recommendationsGeneratedAt ?? visit.visitDate, 'Brak danych'),
 });
 
 const mapPatientDetails = (dto: PatientDetailsDto): PatientDetailsViewModel => {
