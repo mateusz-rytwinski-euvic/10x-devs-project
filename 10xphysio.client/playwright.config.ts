@@ -4,7 +4,7 @@ const isCI = Boolean(process.env.CI);
 const devPort = Number(process.env.DEV_SERVER_PORT ?? '54501');
 const previewPort = Number(process.env.PLAYWRIGHT_PREVIEW_PORT ?? '4173');
 const devBaseURL = `https://localhost:${devPort}`;
-const previewBaseURL = `http://localhost:${previewPort}`;
+const previewBaseURL = `https://localhost:${previewPort}`;
 const resolvedBaseURL = process.env.PLAYWRIGHT_BASE_URL ?? (isCI ? previewBaseURL : devBaseURL);
 
 /**
