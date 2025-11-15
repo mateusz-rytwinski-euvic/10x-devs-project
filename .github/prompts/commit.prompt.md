@@ -1,6 +1,6 @@
 ---
 mode: 'agent'
-model: GPT-5 mini
+model: GPT-4.1
 description: 'Commit message generator for project'
 ---
 Suggest a concise and descriptive commit message for current changes.

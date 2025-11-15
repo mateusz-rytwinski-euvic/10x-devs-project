@@ -314,6 +314,10 @@ FakesAssemblies/
 .ntvs_analysis.dat
 node_modules/
 
+# Playwright test artifacts
+10xphysio.client/playwright-report/
+10xphysio.client/test-results/
+
 # Visual Studio 6 build log
 *.plg
 
