@@ -38,6 +38,7 @@ namespace _10xPhysio.Server.Tests.Controllers
                 Id = TherapistId,
                 FirstName = "Jane",
                 LastName = "Doe",
+                PreferredAiModel = "gpt-4o",
                 CreatedAt = DateTimeOffset.UtcNow.AddDays(-10),
                 UpdatedAt = DateTimeOffset.UtcNow,
                 ETag = "W/\"2024-07-07T00:00:00.0000000Z\""
@@ -87,7 +88,8 @@ namespace _10xPhysio.Server.Tests.Controllers
             var command = new ProfileUpdateCommand
             {
                 FirstName = "Updated",
-                LastName = "Name"
+                LastName = "Name",
+                PreferredAiModel = "sonnet-3"
             };
 
             var updatedProfile = new ProfileSummaryDto
@@ -95,6 +97,7 @@ namespace _10xPhysio.Server.Tests.Controllers
                 Id = TherapistId,
                 FirstName = command.FirstName,
                 LastName = command.LastName,
+                PreferredAiModel = command.PreferredAiModel,
                 CreatedAt = DateTimeOffset.UtcNow.AddYears(-1),
                 UpdatedAt = DateTimeOffset.UtcNow,
                 ETag = "W/\"2024-08-08T00:00:00.0000000Z\""

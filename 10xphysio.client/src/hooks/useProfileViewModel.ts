@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { ProfileEndpointError, getProfile, updateProfile } from '../services/profileService';
+import { getAiModelLabel } from '../constants/aiModels';
 import type { ProfileFormData, ProfileFormErrors, ProfileSummaryDto, ProfileUpdateCommand } from '../types/profile';
 import { formatPolishDateTime } from '../utils/date';
 import { useAuth } from './useAuth';
@@ -10,6 +11,7 @@ export interface ProfileMetaViewModel {
     createdAtLabel: string;
     updatedAtLabel: string;
     fullName: string;
+    preferredAiModelLabel: string;
 }
 
 export interface UseProfileViewModelResult {
@@ -28,12 +30,14 @@ export interface UseProfileViewModelResult {
 }
 
 const MAX_NAME_LENGTH = 100;
+const MAX_MODEL_LENGTH = 100;
 const NAME_PATTERN = /^[\p{L}\- ]+$/u;
 const UPDATE_PROFILE_ERROR_MESSAGE = 'Nie udało się zaktualizować profilu. Spróbuj ponownie.';
 
 const buildInitialFormState = (overrides?: Partial<ProfileFormData>): ProfileFormData => ({
     firstName: overrides?.firstName ?? '',
     lastName: overrides?.lastName ?? '',
+    preferredAiModel: overrides?.preferredAiModel ?? '',
 });
 
 // Client-side validation mirrors backend guards so users get instant feedback before a PATCH request is issued.
@@ -42,6 +46,7 @@ const validateFormState = (state: ProfileFormData): ProfileFormErrors => {
 
     const firstName = state.firstName.trim();
     const lastName = state.lastName.trim();
+    const preferredAiModel = state.preferredAiModel.trim();
 
     if (firstName.length === 0) {
         errors.firstName = 'Imię jest wymagane.';
@@ -59,12 +64,17 @@ const validateFormState = (state: ProfileFormData): ProfileFormErrors => {
         errors.lastName = 'Nazwisko może zawierać jedynie litery, spacje oraz myślnik.';
     }
 
+    if (preferredAiModel.length > MAX_MODEL_LENGTH) {
+        errors.preferredAiModel = `Nazwa modelu AI nie może zawierać więcej niż ${MAX_MODEL_LENGTH} znaków.`;
+    }
+
     return errors;
 };
 
 const toCommand = (formData: ProfileFormData): ProfileUpdateCommand => ({
     firstName: formData.firstName.trim(),
     lastName: formData.lastName.trim(),
+    preferredAiModel: formData.preferredAiModel.trim().length > 0 ? formData.preferredAiModel.trim() : null,
 });
 
 const mergeErrors = (source: ProfileFormErrors | undefined, fallbackMessage: string): ProfileFormErrors => {
@@ -93,6 +103,7 @@ const buildMeta = (profile: ProfileSummaryDto | null): ProfileMetaViewModel | nu
         createdAtLabel: formatPolishDateTime(profile.createdAt, 'Brak danych'),
         updatedAtLabel: formatPolishDateTime(profile.updatedAt, 'Brak danych'),
         fullName: fullName.length > 0 ? fullName : 'Brak danych',
+        preferredAiModelLabel: getAiModelLabel(profile.preferredAiModel),
     };
 };
 
@@ -152,10 +163,12 @@ export const useProfileViewModel = (): UseProfileViewModelResult => {
         setFormData(buildInitialFormState({
             firstName: profileQuery.data.firstName,
             lastName: profileQuery.data.lastName,
+            preferredAiModel: profileQuery.data.preferredAiModel ?? '',
         }));
         initialFormRef.current = buildInitialFormState({
             firstName: profileQuery.data.firstName,
             lastName: profileQuery.data.lastName,
+            preferredAiModel: profileQuery.data.preferredAiModel ?? '',
         });
         setFormErrors({});
         setEtag(profileQuery.data.eTag ?? null);
@@ -167,9 +180,10 @@ export const useProfileViewModel = (): UseProfileViewModelResult => {
         const initial = initialFormRef.current;
         return (
             initial.firstName.trim() !== formData.firstName.trim() ||
-            initial.lastName.trim() !== formData.lastName.trim()
+            initial.lastName.trim() !== formData.lastName.trim() ||
+            initial.preferredAiModel.trim() !== formData.preferredAiModel.trim()
         );
-    }, [formData.firstName, formData.lastName]);
+    }, [formData.firstName, formData.lastName, formData.preferredAiModel]);
 
     const mutation = useMutation<ProfileSummaryDto, ProfileEndpointError, UpdateProfilePayload>({
         mutationFn: ({ command, etag: currentEtag }) => updateProfile({ command, token, etag: currentEtag }),
@@ -178,10 +192,12 @@ export const useProfileViewModel = (): UseProfileViewModelResult => {
             setFormData(buildInitialFormState({
                 firstName: updatedProfile.firstName,
                 lastName: updatedProfile.lastName,
+                preferredAiModel: updatedProfile.preferredAiModel ?? '',
             }));
             initialFormRef.current = buildInitialFormState({
                 firstName: updatedProfile.firstName,
                 lastName: updatedProfile.lastName,
+                preferredAiModel: updatedProfile.preferredAiModel ?? '',
             });
             setFormErrors({});
             setEtag(updatedProfile.eTag ?? null);

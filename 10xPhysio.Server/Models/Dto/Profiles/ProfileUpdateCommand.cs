@@ -24,5 +24,11 @@ namespace _10xPhysio.Server.Models.Dto.Profiles
         [Required]
         [StringLength(100)]
         public string LastName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the updated preferred AI model identifier. Optional; omitting or blank clears the preference.
+        /// </summary>
+        [StringLength(100)]
+        public string? PreferredAiModel { get; set; }
     }
 }

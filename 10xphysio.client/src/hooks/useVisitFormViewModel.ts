@@ -2,7 +2,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getPatientDetailsPath, getPatientVisitDetailsPath, routes } from '../routes';
+import { ProfileEndpointError, getProfile } from '../services/profileService';
 import { createVisit, deleteVisit, generateVisitRecommendations, getVisit, saveVisitRecommendations, updateVisit, VisitsEndpointError } from '../services/visitService';
+import type { ProfileSummaryDto } from '../types/profile';
 import type { VisitAiGenerationCommand, VisitFormData, VisitFormViewModel, VisitRecommendationCommand } from '../types/visit';
 import { isValidGuid } from '../utils/guid';
 import { useAuth } from './useAuth';
@@ -63,8 +65,18 @@ const toUtcIsoString = (value: string): string => {
     return parsed.toISOString();
 };
 
-const buildGenerationCommand = (_description: string, regenerateFromGenerationId: string | null): VisitAiGenerationCommand => {
+const buildGenerationCommand = (
+    _description: string,
+    regenerateFromGenerationId: string | null,
+    preferredModel: string | null | undefined,
+): VisitAiGenerationCommand => {
     const command: VisitAiGenerationCommand = {};
+
+    const trimmedModel = typeof preferredModel === 'string' ? preferredModel.trim() : '';
+    if (trimmedModel.length > 0) {
+        // Use the therapist's preferred AI model when specified so generation requests stay aligned with profile settings.
+        command.model = trimmedModel;
+    }
 
     if (regenerateFromGenerationId) {
         command.regenerateFromGenerationId = regenerateFromGenerationId;
@@ -107,6 +119,21 @@ export const useVisitFormViewModel = (patientId?: string | null, visitId?: strin
     const hasValidPatientId = Boolean(patientId && isValidGuid(patientId));
     const hasValidVisitId = Boolean(visitId && isValidGuid(visitId));
     const isEditMode = hasValidVisitId;
+    const profileQueryKey = ['profile', session?.userId ?? 'anonymous'] as const;
+
+    const profileQuery = useQuery<ProfileSummaryDto, ProfileEndpointError>({
+        queryKey: profileQueryKey,
+        enabled: Boolean(token),
+        staleTime: 60_000,
+        retry: (failureCount, error) => {
+            if (error instanceof ProfileEndpointError && error.status === 404) {
+                return false;
+            }
+
+            return failureCount < 2;
+        },
+        queryFn: () => getProfile({ token }),
+    });
 
     const [formData, setFormData] = useState<VisitFormData>(() => buildInitialFormData());
     const [resolvedPatientId, setResolvedPatientId] = useState<string | null>(hasValidPatientId ? patientId ?? null : null);
@@ -171,6 +198,14 @@ export const useVisitFormViewModel = (patientId?: string | null, visitId?: strin
 
         setError(formatError(visitQuery.error));
     }, [visitQuery.error]);
+
+    useEffect(() => {
+        if (!profileQuery.error) {
+            return;
+        }
+
+        console.error('Failed to load therapist profile before AI recommendation generation.', profileQuery.error);
+    }, [profileQuery.error]);
 
     const invalidateVisitQueries = useCallback(() => {
         const scopePatientId = resolvedPatientId ?? (hasValidPatientId && patientId ? patientId : null);
@@ -274,13 +309,15 @@ export const useVisitFormViewModel = (patientId?: string | null, visitId?: strin
                 throw new VisitsEndpointError('Brak danych wizyty.', 400);
             }
 
-            const command: VisitAiGenerationCommand = buildGenerationCommand(formData.description, latestAiGenerationId);
+            const command: VisitAiGenerationCommand = buildGenerationCommand(
+                formData.description,
+                latestAiGenerationId,
+                profileQuery.data?.preferredAiModel,
+            );
             return generateVisitRecommendations(visitId, command, token);
         },
         onSuccess: (generation) => {
-            const candidate = generation.recommendationsPreview.trim().length > 0
-                ? generation.recommendationsPreview
-                : generation.aiResponse;
+            const candidate = generation.aiResponse;
 
             setFormData((previous) => ({
                 ...previous,

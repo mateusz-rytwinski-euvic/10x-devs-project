@@ -27,16 +27,22 @@ namespace _10xPhysio.Server.Models.Database
         [Column("last_name")]
         public string LastName { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Timestamp of when the profile record was created within Supabase. Ignored on persistence so triggers fill it.
-    /// </summary>
-    [Column("created_at", ignoreOnInsert: true, ignoreOnUpdate: true)]
-    public DateTimeOffset CreatedAt { get; set; }
+        /// <summary>
+        /// Preferred AI model identifier selected by the therapist for visit recommendation generation.
+        /// </summary>
+        [Column("preferred_ai_model")]
+        public string? PreferredAiModel { get; set; }
 
-    /// <summary>
-    /// Timestamp of the last profile update, managed by database triggers and therefore excluded from writes.
-    /// </summary>
-    [Column("updated_at", ignoreOnInsert: true, ignoreOnUpdate: true)]
-    public DateTimeOffset UpdatedAt { get; set; }
+        /// <summary>
+        /// Timestamp of when the profile record was created within Supabase. Ignored on persistence so triggers fill it.
+        /// </summary>
+        [Column("created_at", ignoreOnInsert: true, ignoreOnUpdate: true)]
+        public DateTimeOffset CreatedAt { get; set; }
+
+        /// <summary>
+        /// Timestamp of the last profile update, managed by database triggers and therefore excluded from writes.
+        /// </summary>
+        [Column("updated_at", ignoreOnInsert: true, ignoreOnUpdate: true)]
+        public DateTimeOffset UpdatedAt { get; set; }
     }
 }

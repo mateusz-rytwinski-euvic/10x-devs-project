@@ -1,14 +1,25 @@
 import type { InputOnChangeData } from '@fluentui/react-components';
-import { Button, Field, Input, MessageBar, MessageBarBody, MessageBarTitle, Spinner } from '@fluentui/react-components';
-import { useCallback } from 'react';
+import { Button, Dropdown, Field, Input, MessageBar, MessageBarBody, MessageBarTitle, Option, Spinner } from '@fluentui/react-components';
+import { useCallback, useMemo } from 'react';
 import { AppLayout } from '../components/layout/AppLayout';
 import { useProfileViewModel } from '../hooks/useProfileViewModel';
+import { AI_MODEL_OPTIONS } from '../constants/aiModels';
 
 const MAX_NAME_LENGTH = 100;
 
 // ProfilePage surfaces authenticated therapist details and allows updating metadata via the profile API.
 export const ProfilePage = () => {
     const viewModel = useProfileViewModel();
+    const defaultAiModelOption = AI_MODEL_OPTIONS[0] ?? { value: '', label: 'Domyślny model systemowy' };
+    const preferredAiModelValue = viewModel.formData.preferredAiModel ?? '';
+
+    const selectedAiModelOption = useMemo(
+        () => AI_MODEL_OPTIONS.find((option) => option.value === preferredAiModelValue),
+        [preferredAiModelValue],
+    );
+
+    const selectedAiModelValue = selectedAiModelOption?.value ?? defaultAiModelOption.value;
+    const selectedAiModelLabel = selectedAiModelOption?.label ?? (preferredAiModelValue || defaultAiModelOption.label);
 
     const handleFirstNameChange = useCallback(
         (_event: unknown, data: InputOnChangeData) => {
@@ -20,6 +31,13 @@ export const ProfilePage = () => {
     const handleLastNameChange = useCallback(
         (_event: unknown, data: InputOnChangeData) => {
             viewModel.setFormField('lastName', data.value ?? '');
+        },
+        [viewModel],
+    );
+
+    const handleModelChange = useCallback(
+        (_event: unknown, data: { optionValue?: string }) => {
+            viewModel.setFormField('preferredAiModel', data.optionValue ?? '');
         },
         [viewModel],
     );
@@ -92,6 +110,31 @@ export const ProfilePage = () => {
                                     />
                                 </Field>
 
+                                <Field
+                                    label="Preferowany model AI"
+                                    validationMessage={viewModel.formErrors.preferredAiModel}
+                                    validationState={viewModel.formErrors.preferredAiModel ? 'error' : 'none'}
+                                    hint="Wybierz model używany do generowania zaleceń AI. Pozostaw domyślne, aby korzystać z konfiguracji globalnej."
+                                >
+                                    <Dropdown
+                                        disabled={viewModel.isSaving}
+                                        selectedOptions={[selectedAiModelValue]}
+                                        value={selectedAiModelLabel}
+                                        onOptionSelect={handleModelChange}
+                                        aria-label="Preferowany model AI"
+                                    >
+                                        {AI_MODEL_OPTIONS.map((option) => (
+                                            <Option
+                                                key={option.value === '' ? 'default' : option.value}
+                                                value={option.value}
+                                                text={option.label}
+                                            >
+                                                {option.label}
+                                            </Option>
+                                        ))}
+                                    </Dropdown>
+                                </Field>
+
                                 {viewModel.formErrors.general ? (
                                     <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-600">
                                         {viewModel.formErrors.general}
@@ -130,6 +173,12 @@ export const ProfilePage = () => {
                                         <dt className="font-medium text-slate-500">Pełne imię i nazwisko</dt>
                                         <dd className="text-right font-semibold text-slate-900">
                                             {viewModel.meta.fullName}
+                                        </dd>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <dt className="font-medium text-slate-500">Preferowany model AI</dt>
+                                        <dd className="text-right font-semibold text-slate-900">
+                                            {viewModel.meta.preferredAiModelLabel}
                                         </dd>
                                     </div>
                                     <div className="flex items-center justify-between">

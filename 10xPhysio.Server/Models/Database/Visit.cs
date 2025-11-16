@@ -57,16 +57,16 @@ namespace _10xPhysio.Server.Models.Database
         [Column("recommendations_generated_at")]
         public DateTimeOffset? RecommendationsGeneratedAt { get; set; }
 
-    /// <summary>
-    /// Timestamp of visit creation. Ignored on write operations so database defaults populate the value.
-    /// </summary>
-    [Column("created_at", ignoreOnInsert: true, ignoreOnUpdate: true)]
-    public DateTimeOffset CreatedAt { get; set; }
+        /// <summary>
+        /// Timestamp of visit creation. Ignored on write operations so database defaults populate the value.
+        /// </summary>
+        [Column("created_at", ignoreOnInsert: true, ignoreOnUpdate: true)]
+        public DateTimeOffset CreatedAt { get; set; }
 
-    /// <summary>
-    /// Timestamp of the latest visit update maintained by triggers; excluded from writes to avoid resetting it.
-    /// </summary>
-    [Column("updated_at", ignoreOnInsert: true, ignoreOnUpdate: true)]
-    public DateTimeOffset UpdatedAt { get; set; }
+        /// <summary>
+        /// Timestamp of the latest visit update maintained by triggers; excluded from writes to avoid resetting it.
+        /// </summary>
+        [Column("updated_at", ignoreOnInsert: true, ignoreOnUpdate: true)]
+        public DateTimeOffset UpdatedAt { get; set; }
     }
 }

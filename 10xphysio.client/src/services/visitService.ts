@@ -46,6 +46,29 @@ const GENERATE_RECOMMENDATIONS_FALLBACK_MESSAGE = 'Nie udało się wygenerować 
 const SAVE_RECOMMENDATIONS_FALLBACK_MESSAGE = 'Nie udało się zapisać zaleceń. Spróbuj ponownie.';
 const DELETE_VISIT_FALLBACK_MESSAGE = 'Nie udało się usunąć wizyty. Spróbuj ponownie.';
 
+const VISIT_API_ERROR_TRANSLATIONS: Record<string, string> = {
+    ai_generation_failed: 'Generowanie zaleceń nie powiodło się. Spróbuj ponownie później.',
+    ai_generation_missing: 'Nie znaleziono powiązanej generacji AI.',
+    ai_generation_persistence_failed: 'Nie udało się zapisać historii generacji AI. Spróbuj ponownie.',
+    ai_rate_limited: 'Limit generowania zaleceń został chwilowo wyczerpany. Spróbuj ponownie za kilka minut.',
+    model_provider_unavailable: 'Dostawca modelu AI jest chwilowo niedostępny. Spróbuj ponownie później.',
+    visit_create_failed: 'Nie udało się utworzyć wizyty. Spróbuj ponownie później.',
+    visit_update_failed: 'Nie udało się zaktualizować wizyty. Spróbuj ponownie później.',
+    visit_delete_failed: 'Nie udało się usunąć wizyty. Spróbuj ponownie.',
+    visit_recommendations_failed: 'Nie udało się zapisać zaleceń. Spróbuj ponownie.',
+    visit_missing: 'Wizyta nie została znaleziona.',
+    visit_not_owned: 'Nie masz uprawnień do tej wizyty.',
+    visit_date_future: 'Nie można zaplanować wizyty tak daleko w przyszłości.',
+    visit_content_required: 'Podaj opis, wywiad albo zalecenia, aby zapisać wizytę.',
+    recommendations_required: 'Zalecenia są wymagane, aby kontynuować.',
+    source_generation_required: 'Wybierz powiązaną generację AI, aby oznaczyć zalecenia jako automatyczne.',
+    source_generation_not_allowed: 'Usuń powiązaną generację AI, jeśli zalecenia przygotowano ręcznie.',
+    patient_missing: 'Nie znaleziono pacjenta.',
+    patient_not_owned: 'Nie masz uprawnień do tego pacjenta.',
+    invalid_pagination: 'Parametry paginacji są nieprawidłowe.',
+    invalid_date_range: 'Zakres dat jest niepoprawny.',
+};
+
 const isRecord = (value: unknown): value is Record<string, unknown> => {
     return typeof value === 'object' && value !== null;
 };
@@ -83,6 +106,20 @@ const extractCorrelationId = (payload: VisitErrorShape | null): string | undefin
 
     const candidate = payload.correlationId ?? (payload as { CorrelationId?: unknown }).CorrelationId;
     return typeof candidate === 'string' ? candidate : undefined;
+};
+
+const translateVisitApiMessage = (message: NullableString): string | undefined => {
+    if (!message) {
+        return undefined;
+    }
+
+    const normalized = message.trim().toLowerCase();
+
+    if (normalized.length === 0) {
+        return undefined;
+    }
+
+    return VISIT_API_ERROR_TRANSLATIONS[normalized];
 };
 
 const toOptionalString = (value: unknown): string | null => {
@@ -379,9 +416,11 @@ export const createVisit = async (
 
     if (!response.ok) {
         const errorPayload = await readErrorResponse(response);
+        const serverMessage = extractMessage(errorPayload);
+        const fallbackMessage = translateVisitApiMessage(serverMessage) ?? serverMessage ?? CREATE_VISIT_FALLBACK_MESSAGE;
         const message = resolveCreateVisitErrorMessage(
             response.status,
-            extractMessage(errorPayload) ?? CREATE_VISIT_FALLBACK_MESSAGE,
+            fallbackMessage,
         );
         const correlationId = extractCorrelationId(errorPayload);
 
@@ -429,9 +468,11 @@ export const getVisit = async (visitId: string, token: NullableString): Promise<
 
     if (!response.ok) {
         const errorPayload = await readErrorResponse(response);
+        const serverMessage = extractMessage(errorPayload);
+        const fallbackMessage = translateVisitApiMessage(serverMessage) ?? serverMessage ?? GET_VISIT_FALLBACK_MESSAGE;
         const message = resolveGetVisitErrorMessage(
             response.status,
-            extractMessage(errorPayload) ?? GET_VISIT_FALLBACK_MESSAGE,
+            fallbackMessage,
         );
         const correlationId = extractCorrelationId(errorPayload);
 
@@ -492,9 +533,11 @@ export const updateVisit = async (
 
     if (!response.ok) {
         const errorPayload = await readErrorResponse(response);
+        const serverMessage = extractMessage(errorPayload);
+        const fallbackMessage = translateVisitApiMessage(serverMessage) ?? serverMessage ?? UPDATE_VISIT_FALLBACK_MESSAGE;
         const message = resolveUpdateVisitErrorMessage(
             response.status,
-            extractMessage(errorPayload) ?? UPDATE_VISIT_FALLBACK_MESSAGE,
+            fallbackMessage,
         );
         const correlationId = extractCorrelationId(errorPayload);
 
@@ -549,9 +592,11 @@ export const generateVisitRecommendations = async (
 
     if (!response.ok) {
         const errorPayload = await readErrorResponse(response);
+        const serverMessage = extractMessage(errorPayload);
+        const fallbackMessage = translateVisitApiMessage(serverMessage) ?? serverMessage ?? GENERATE_RECOMMENDATIONS_FALLBACK_MESSAGE;
         const message = resolveGenerateRecommendationsErrorMessage(
             response.status,
-            extractMessage(errorPayload) ?? GENERATE_RECOMMENDATIONS_FALLBACK_MESSAGE,
+            fallbackMessage,
         );
         const correlationId = extractCorrelationId(errorPayload);
 
@@ -616,9 +661,11 @@ export const saveVisitRecommendations = async (
 
     if (!response.ok) {
         const errorPayload = await readErrorResponse(response);
+        const serverMessage = extractMessage(errorPayload);
+        const fallbackMessage = translateVisitApiMessage(serverMessage) ?? serverMessage ?? SAVE_RECOMMENDATIONS_FALLBACK_MESSAGE;
         const message = resolveSaveRecommendationsErrorMessage(
             response.status,
-            extractMessage(errorPayload) ?? SAVE_RECOMMENDATIONS_FALLBACK_MESSAGE,
+            fallbackMessage,
         );
         const correlationId = extractCorrelationId(errorPayload);
 
@@ -667,9 +714,11 @@ export const deleteVisit = async (visitId: string, token: NullableString): Promi
 
     if (!response.ok) {
         const errorPayload = await readErrorResponse(response);
+        const serverMessage = extractMessage(errorPayload);
+        const fallbackMessage = translateVisitApiMessage(serverMessage) ?? serverMessage ?? DELETE_VISIT_FALLBACK_MESSAGE;
         const message = resolveGetVisitErrorMessage(
             response.status,
-            extractMessage(errorPayload) ?? DELETE_VISIT_FALLBACK_MESSAGE,
+            fallbackMessage,
         );
         const correlationId = extractCorrelationId(errorPayload);
 

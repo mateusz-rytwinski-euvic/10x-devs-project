@@ -124,6 +124,11 @@ const interpretErrorCode = (code: string | undefined): ErrorInterpretation => {
                 message: 'Nazwisko może zawierać jedynie litery, spacje oraz myślnik.',
                 validationErrors: mapValidationError('lastName', 'Nazwisko może zawierać jedynie litery, spacje oraz myślnik.'),
             };
+        case 'preferred_ai_model_too_long':
+            return {
+                message: 'Nazwa modelu AI nie może zawierać więcej niż 100 znaków.',
+                validationErrors: mapValidationError('preferredAiModel', 'Nazwa modelu AI jest zbyt długa.'),
+            };
         case 'no_changes_submitted':
             return {
                 message: 'Wprowadź zmiany przed zapisaniem profilu.',
@@ -219,6 +224,7 @@ const normalizeProfile = (payload: unknown): ProfileSummaryDto => {
     const id = toOptionalString(payload.id ?? payload.Id);
     const firstName = toOptionalString(payload.firstName ?? payload.FirstName) ?? '';
     const lastName = toOptionalString(payload.lastName ?? payload.LastName) ?? '';
+    const preferredAiModel = toOptionalString(payload.preferredAiModel ?? payload.PreferredAiModel);
     const createdAt = toOptionalString(payload.createdAt ?? payload.CreatedAt);
     const updatedAt = toOptionalString(payload.updatedAt ?? payload.UpdatedAt);
     const eTag = toOptionalString(payload.eTag ?? payload.ETag) ?? '';
@@ -232,6 +238,7 @@ const normalizeProfile = (payload: unknown): ProfileSummaryDto => {
         id,
         firstName,
         lastName,
+        preferredAiModel: preferredAiModel ?? null,
         createdAt,
         updatedAt,
         eTag,

@@ -81,14 +81,16 @@ namespace _10xPhysio.Server.Services.Profiles
 
             var normalizedFirstName = NormalizeName(command.FirstName, "first_name");
             var normalizedLastName = NormalizeName(command.LastName, "last_name");
+            var normalizedPreferredAiModel = NormalizePreferredAiModel(command.PreferredAiModel);
 
             if (string.Equals(normalizedFirstName, profile.FirstName, StringComparison.Ordinal)
-                && string.Equals(normalizedLastName, profile.LastName, StringComparison.Ordinal))
+                && string.Equals(normalizedLastName, profile.LastName, StringComparison.Ordinal)
+                && string.Equals(normalizedPreferredAiModel, profile.PreferredAiModel, StringComparison.Ordinal))
             {
                 throw new ApiException(StatusCodes.Status400BadRequest, "no_changes_submitted");
             }
 
-            await ApplyUpdateAsync(client, profile.Id, normalizedFirstName, normalizedLastName, cancellationToken).ConfigureAwait(false);
+            await ApplyUpdateAsync(client, profile.Id, normalizedFirstName, normalizedLastName, normalizedPreferredAiModel, cancellationToken).ConfigureAwait(false);
 
             var refreshedProfile = await FetchProfileAsync(client, userId, cancellationToken).ConfigureAwait(false);
             return ProfileSummaryDto.FromEntity(refreshedProfile);
@@ -118,13 +120,14 @@ namespace _10xPhysio.Server.Services.Profiles
             }
         }
 
-        private async Task ApplyUpdateAsync(SupabaseClient client, Guid profileId, string firstName, string lastName, CancellationToken cancellationToken)
+        private async Task ApplyUpdateAsync(SupabaseClient client, Guid profileId, string firstName, string lastName, string? preferredAiModel, CancellationToken cancellationToken)
         {
             var payload = new Profile
             {
                 Id = profileId,
                 FirstName = firstName,
-                LastName = lastName
+                LastName = lastName,
+                PreferredAiModel = preferredAiModel
             };
 
             try
@@ -173,6 +176,23 @@ namespace _10xPhysio.Server.Services.Profiles
             }
 
             return collapsed;
+        }
+
+        private static string? NormalizePreferredAiModel(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return null;
+            }
+
+            var trimmed = value.Trim();
+
+            if (trimmed.Length > 100)
+            {
+                throw new ApiException(StatusCodes.Status400BadRequest, "preferred_ai_model_too_long");
+            }
+
+            return trimmed;
         }
     }
 }

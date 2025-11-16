@@ -25,6 +25,11 @@ namespace _10xPhysio.Server.Models.Dto.Profiles
         public string LastName { get; set; } = string.Empty;
 
         /// <summary>
+        /// Gets or sets the preferred AI model identifier used for automated recommendation generation.
+        /// </summary>
+        public string? PreferredAiModel { get; set; }
+
+        /// <summary>
         /// Gets or sets the creation timestamp mirrored from <see cref="Profile.CreatedAt"/>.
         /// </summary>
         public DateTimeOffset CreatedAt { get; set; }
@@ -53,6 +58,7 @@ namespace _10xPhysio.Server.Models.Dto.Profiles
                 Id = profile.Id,
                 FirstName = profile.FirstName,
                 LastName = profile.LastName,
+                PreferredAiModel = profile.PreferredAiModel,
                 CreatedAt = profile.CreatedAt,
                 UpdatedAt = profile.UpdatedAt,
                 ETag = WeakEtag.FromTimestamp(profile.UpdatedAt)
