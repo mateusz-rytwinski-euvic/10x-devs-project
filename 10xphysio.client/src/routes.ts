@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react';
 import { LoginPage } from './pages/LoginPage';
+import { ProfilePage } from './pages/ProfilePage';
 import { PatientDetailsPage } from './pages/PatientDetailsPage';
 import { PatientFormPage } from './pages/PatientFormPage';
 import { PatientsPage } from './pages/PatientsPage';
@@ -14,6 +15,7 @@ import { VisitFormPage } from './pages/VisitFormPage';
 export const routes = {
     login: '/login',
     signup: '/signup',
+    profile: '/profile',
     patients: '/patients',
     patientDetails: '/patients/:patientId',
     patientCreate: '/patients/new',
@@ -58,6 +60,11 @@ export const routeConfigs: RouteConfig[] = [
         path: routes.signup,
         component: SignUpPage,
         isProtected: false,
+    },
+    {
+        path: routes.profile,
+        component: ProfilePage,
+        isProtected: true,
     },
     {
         path: routes.patients,

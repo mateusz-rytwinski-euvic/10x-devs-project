@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { isAuthenticatedSelector, useAuthStore } from '../state/authStore';
 import type { AuthSessionDto } from '../types/auth';
 
@@ -11,10 +12,24 @@ interface UseAuthResult {
 
 // useAuth consolidates access to the authentication store and memoizes derived flags.
 export const useAuth = (): UseAuthResult => {
+    const queryClient = useQueryClient();
     const session = useAuthStore((state) => state.session);
-    const login = useAuthStore((state) => state.login);
-    const logout = useAuthStore((state) => state.logout);
+    const loginFromStore = useAuthStore((state) => state.login);
+    const logoutFromStore = useAuthStore((state) => state.logout);
     const isAuthenticated = useAuthStore(isAuthenticatedSelector);
+
+    const login = useCallback(
+        (nextSession: AuthSessionDto) => {
+            queryClient.clear();
+            loginFromStore(nextSession);
+        },
+        [loginFromStore, queryClient],
+    );
+
+    const logout = useCallback(() => {
+        queryClient.clear();
+        logoutFromStore();
+    }, [logoutFromStore, queryClient]);
 
     return useMemo(
         () => ({

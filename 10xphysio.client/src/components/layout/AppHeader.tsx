@@ -18,6 +18,11 @@ export const AppHeader = memo(() => {
 
     const navigationLinks: HeaderLink[] = [
         {
+            label: 'Profil',
+            to: routes.profile,
+            isVisible: isAuthenticated,
+        },
+        {
             label: 'Zaloguj się',
             to: routes.login,
             isVisible: !isAuthenticated && location.pathname !== routes.login,
@@ -45,15 +50,25 @@ export const AppHeader = memo(() => {
                 <nav className="flex flex-1 items-center justify-end gap-3 text-sm font-medium text-slate-600">
                     {navigationLinks
                         .filter((link) => link.isVisible)
-                        .map((link) => (
-                            <Link
-                                key={link.to}
-                                to={link.to}
-                                className="rounded-full px-3 py-1.5 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
-                            >
-                                {link.label}
-                            </Link>
-                        ))}
+                        .map((link) => {
+                            const isActive = location.pathname === link.to;
+                            const baseClasses =
+                                'rounded-full px-3 py-1.5 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400';
+                            const activeClasses = isActive
+                                ? 'bg-slate-900 text-white shadow-sm hover:bg-slate-900'
+                                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900';
+
+                            return (
+                                <Link
+                                    key={link.to}
+                                    to={link.to}
+                                    aria-current={isActive ? 'page' : undefined}
+                                    className={`${baseClasses} ${activeClasses}`}
+                                >
+                                    {link.label}
+                                </Link>
+                            );
+                        })}
 
                     {isAuthenticated ? (
                         <>
